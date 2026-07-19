@@ -1,0 +1,15 @@
+{
+  "chunk_id": "real_time_freight_visibility_chunk_003",
+  "text": "Real-Time Freight Visibility: From GPS Ping to Customer ETA > The Ingestion Path. <chunk body...>",
+  "metadata": {
+    "document_id": "real_time_freight_visibility",
+    "source_file": "data/raw/real-time-freight-visibility.md",
+    "source_type": "markdown",
+    "title": "Real-Time Freight Visibility: From GPS Ping to Customer ETA",
+    "section": "The Ingestion Path",
+    "chunk_index": 3,
+    "language": "en",
+    "domain": "logistics-engineering",
+    "document_type": "concept-guide"
+  }
+}

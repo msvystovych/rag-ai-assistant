@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/msvystovych/rag-ai-assistant/docs/homework1/assets/chunk.schema.json",
+  "title": "RAG knowledge-base chunk",
+  "description": "One line of data/processed/chunks.jsonl. Shape follows the homework spec's own sample chunk: chunk_id and text at the top level, everything else nested under metadata. See 06-chunk-schema.md for the field-by-field generation rules.",
+  "type": "object",
+  "required": ["chunk_id", "text", "metadata"],
+  "additionalProperties": false,
+  "properties": {
+    "chunk_id": {
+      "type": "string",
+      "description": "f\"{document_id}_chunk_{chunk_index:03d}\"",
+      "pattern": "^[a-z0-9_]+_chunk_[0-9]{3,}$"
+    },
+    "text": {
+      "type": "string",
+      "description": "Breadcrumb prefix ('<Doc Title> > <Section>. ') followed by the chunk body. Hard ceiling 1000 chars INCLUDING the prefix; the splitter target is 800 (see 05-chunking-strategy.md).",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["document_id", "source_file", "chunk_index"],
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "Filename stem, lowercased, re.sub(r'[^a-z0-9]+', '_', ...).strip('_')",
+          "pattern": "^[a-z0-9]+(_[a-z0-9]+)*$"
+        },
+        "source_file": {
+          "type": "string",
+          "description": "Repo-relative path of the source document",
+          "pattern": "^data/raw/[a-z0-9-]+\\.md$"
+        },
+        "chunk_index": {
+          "type": "integer",
+          "description": "1-based position within its document; contiguous 1..N per document_id",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "description": "The document's H1 (fallback: filename stem, title-cased)"
+        },
+        "section": {
+          "type": "string",
+          "description": "Nearest H2/H3 heading; 'Introduction' for body before the first H2; never the title. Merged chunks carry the FIRST section's name.",
+          "minLength": 1
+        },
+        "language": {
+          "type": "string",
+          "const": "en"
+        },
+        "domain": {
+          "type": "string",
+          "const": "logistics-engineering"
+        },
+        "document_type": {
+          "type": "string",
+          "description": "Canonical vocabulary — this enum is the single source of truth (see 04-corpus-plan.md)",
+          "enum": ["concept-guide", "architecture-guide", "case-study", "playbook"]
+        },
+        "source_type": {
+          "type": "string",
+          "const": "markdown"
+        }
+      }
+    }
+  }
+}
