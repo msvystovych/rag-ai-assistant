@@ -1,0 +1,100 @@
+# Домашнє завдання №1 — Підготовка knowledge base
+
+## 1. Опис завдання
+
+Підготувати перший набір даних для власної RAG-системи.  
+Завдання передбачає:
+- вибір subject area для майбутнього chatbot-а;
+- збір 3–10 документів або сторінок по темі;
+- нормалізацію джерел до єдиного внутрішнього формату;
+- розбиття документів на chunks із metadata;
+- збереження результату у форматі JSONL.
+
+**Мета** — навчитися якісно підготувати документи за pipeline:  
+`raw sources → normalized documents → chunks → metadata → processed knowledge base`
+
+---
+
+## 2. Вимоги до виконання
+
+### Subject area
+- Обрати тему для майбутнього chatbot-а (наприклад: HR policy assistant, product documentation assistant, customer support assistant, legal/compliance assistant тощо).
+- Тема має бути достатньо вузькою (3–10 документів), але змістовною для реальних питань.
+
+### Збір даних
+- Зібрати мінімум **3 документи** у форматі Markdown, TXT, HTML або PDF.
+- Зберегти початкові файли у папці `data/raw/`.
+
+### Chunking
+- Розбити документи на chunks із параметрами: `chunk_size` 500–1000 символів, `overlap` 100–200 символів.
+- Кожен chunk має читатися самостійно і містити достатньо контексту.
+
+### Metadata
+Кожен chunk має містити мінімум:
+- `chunk_id`
+- `document_id`
+- `source_file`
+- `chunk_index`
+- `text`
+
+Бажано також: `title`, `section`, `language`, `domain`, `document_type`.
+
+### Збереження
+- Результат зберегти у файл `data/processed/chunks.jsonl` (один рядок = один chunk).
+
+---
+
+## 3. Формат здачі
+
+Подати у вигляді папки або репозиторію, що містить:
+
+| Що | Де |
+|---|---|
+| Початкові документи | `data/raw/` |
+| Підготовлений скрипт або notebook | `scripts/prepare_knowledge_base.py` або `notebooks/` |
+| Processed chunks | `data/processed/chunks.jsonl` |
+| README з описом проєкту | `README.md` |
+
+README має містити:
+- Назву subject area
+- Список джерел
+- Опис metadata structure
+- Стратегію chunking (розмір, overlap, метод)
+- 3–5 прикладів chunks
+- Короткий висновок: що вийшло добре, що треба покращити
+
+---
+
+## 4. Критерії оцінювання
+
+| Критерій | Бали | Опис |
+|---|---|---|
+| Наявність мінімум 3 джерел у `data/raw/` | 5 | Файли присутні, читаються |
+| Коректний chunking (розмір, overlap, читабельність) | 15 | Chunks не обірвані, мають сенс самостійно |
+| Повна metadata структура | 15 | Присутні chunk_id, document_id, source_file, chunk_index |
+| Збереження у JSONL | 5 | Файл `chunks.jsonl` існує, формат валідний |
+| 3–5 прикладів chunks у README | 5 | Приклади наочні та коментовані |
+| Висновок: аналіз якості chunks | 5 | Є рефлексія: що добре, що покращити |
+| **Разом** | **50** | |
+
+---
+
+## 5. Приклад правильно оформленого chunk
+
+```json
+{
+  "chunk_id": "vacation_policy_chunk_001",
+  "text": "Unused vacation days may be carried over until March 31 of the following year. Employees must submit a carry-over request to HR no later than December 15.",
+  "metadata": {
+    "document_id": "vacation_policy",
+    "source_file": "data/raw/vacation_policy.md",
+    "source_type": "markdown",
+    "title": "Vacation Policy",
+    "section": "Annual Leave",
+    "chunk_index": 1,
+    "language": "en",
+    "domain": "hr",
+    "document_type": "policy"
+  }
+}
+```
