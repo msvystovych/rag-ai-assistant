@@ -4,7 +4,7 @@
 rubric row grades a physical artifact, and none exist yet. See
 [`docs/homework1/00-gap-analysis.md`](docs/homework1/00-gap-analysis.md) for the row-by-row breakdown and the work remaining.
 
-Assignment spec: [`docs/raw/# Домашнє завдання №1 — Підготовка knowl`](docs/raw/%23%20Домашнє%20завдання%20№1%20—%20Підготовка%20knowl)
+Assignment spec: [`docs/raw/# Домашнє завдання №1 — Підготовка knowl`](docs/tasks/%23%20Домашнє%20завдання%20№1%20—%20Підготовка%20knowl)
 — read the spec itself; this folder never paraphrases it. (The file has no extension and begins
 with `#`, so the link is percent-encoded. Renaming it to `homework1-spec.md` would be an
 improvement.)
