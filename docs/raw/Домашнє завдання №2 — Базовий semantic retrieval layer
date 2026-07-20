@@ -1,0 +1,96 @@
+# Домашнє завдання №2 — Базовий semantic retrieval layer
+
+## 1. Опис завдання
+
+Побудувати перший базовий retrieval layer для своєї knowledge base.
+Завдання передбачає:
+- створення embeddings для підготовлених chunks;
+- збереження embeddings у vector storage;
+- реалізацію top-k semantic search;
+- тестування на 5–10 запитах із аналізом результатів.
+
+**Мета** — навчитися знаходити релевантні chunks за user question за pipeline:
+`chunks.jsonl → embeddings → vector index → top-k semantic search → retrieved chunks`
+
+---
+
+## 2. Вимоги до виконання
+
+### Embeddings
+- Створити embeddings для всіх chunks із `data/processed/chunks.jsonl`.
+- Рекомендована модель: `sentence-transformers/all-MiniLM-L6-v2` або `text-embedding-3-small` (OpenAI).
+- Chunks і user query мають бути encoded **однією і тією ж** моделлю.
+
+### Vector storage
+- Зберегти embeddings у локальний vector index.
+- Рекомендований варіант: **FAISS**.
+- Альтернативи: Chroma, Qdrant, NumPy matrix, pgvector.
+
+### Retrieval
+Реалізувати retrieval script або notebook, який:
+1. Приймає user query (рядок тексту).
+2. Створює query embedding.
+3. Шукає top-k (рекомендовано k=3–5) найближчих chunks.
+4. Повертає для кожного результату: `chunk_id`, `score`, `text preview`, `metadata`.
+
+### Тестування
+- Підготувати **5–10 тестових запитів** для своєї subject area.
+- Для кожного query зберегти: query, top-k chunks, короткий коментар (релевантний результат чи ні).
+
+---
+
+## 3. Формат здачі
+
+Подати у вигляді оновленого репозиторію, що містить:
+
+| Що | Де |
+|---|---|
+| Retrieval script або notebook | `scripts/retrieval.py` або `notebooks/` |
+| Vector index або embeddings | `index/faiss.index` або `index/` |
+| Приклади 5–10 queries з результатами | `outputs/retrieval_examples.md` |
+| Оновлений README | `README.md` |
+
+`outputs/retrieval_examples.md` має містити для кожного query:
+```
+Query: ...
+Top-1: chunk_id | score | text preview
+Top-2: chunk_id | score | text preview
+Top-3: chunk_id | score | text preview
+Comment: relevant / not relevant / partially relevant
+```
+
+---
+
+## 4. Критерії оцінювання
+
+| Критерій | Бали | Опис |
+|---|---|---|
+| Embeddings створено та збережено | 10 | Vector index існує, модель вказана |
+| Реалізовано top-k semantic search | 15 | Script запускається, повертає chunk_id + score |
+| Протестовано мінімум 5 queries | 10 | Результати зафіксовані у виведенні або файлі |
+| Metadata присутня у результатах | 5 | Видно source_file або document_id |
+| Короткий висновок: де retrieval добре, де погано | 10 | Є аналіз, а не просто список результатів |
+| **Разом** | **50** | |
+
+---
+
+## 5. Приклад правильно оформленого виведення
+
+```
+Query: Can I carry over unused vacation days?
+
+Top-1: vacation_policy_chunk_001 | score: 0.91
+  Text: Unused vacation days may be carried over until March 31...
+  Source: data/raw/vacation_policy.md
+
+Top-2: vacation_policy_chunk_002 | score: 0.84
+  Text: Employees must submit a carry-over request to HR...
+  Source: data/raw/vacation_policy.md
+
+Top-3: remote_work_policy_chunk_005 | score: 0.61
+  Text: Employees are expected to maintain work-life balance...
+  Source: data/raw/remote_work_policy.md
+
+Comment: Top-2 results are highly relevant. Top-3 is weakly relevant —
+retrieved due to keyword overlap, not semantic match.
+```
