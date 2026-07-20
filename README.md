@@ -11,8 +11,6 @@
    [ ] Rewrite "Conclusions" from the actual run's statistics (see docs/homework1/reflection.md).
    [ ] Prune the Sources table to the documents that actually exist, and drop its "None are
        written yet" caveat.
-   [ ] Settle the open merge decisions in docs/homework1/pipeline-spec.md, then re-check the
-       "Short chunks are merged" bullet under Chunking strategy still describes what the code does.
    [ ] Delete the "Work in progress" banner under the title, the "Planned" note under How to run,
        and this comment block — LAST, and only once all of the above is genuinely done. The banner
        is the only honest signal a GitHub reader sees; HTML comments do not render.
@@ -77,12 +75,13 @@ chunk. The machine-readable contract is
 - **Parameters:** `chunk_size` 800 characters (measured on the chunk body), `overlap` 150
   characters, `min_chunk` 500. Every emitted chunk's `text` is capped at **1000 characters
   including the breadcrumb prefix**.
-- **Short chunks** are merged — short sections forward, a trailing piece backward — both capped at
-  1000 characters including the breadcrumb. A within-section merge strips the duplicated overlap
-  carry; a cross-section merge has no carry and strips nothing. Residual outliers are counted and
-  reported by the script. *(Merge eligibility is still being finalised — see the open decisions in
-  [`docs/homework1/pipeline-spec.md`](docs/homework1/pipeline-spec.md); re-check this bullet once
-  they land.)*
+- **Short chunks are merged** by a single rule: any chunk body under 500 characters is merged
+  **backward** into the chunk before it, while the result — breadcrumb included — stays within 1000
+  characters. A within-section merge strips the duplicated overlap carry; a cross-section merge has
+  no carry and strips nothing. A document's first chunk has no predecessor, so it is never merged —
+  the opening section is authored long enough not to need it. Merging does not eliminate short
+  chunks, it eliminates *tiny* ones: the script counts every body under 500 characters and reports
+  the number, quoted in Conclusions below.
 - **Overlap parameter = 150 characters**, inside the required 100–200 band.
 
   > **Note for automated grading:** overlap applies between consecutive chunks *within a section

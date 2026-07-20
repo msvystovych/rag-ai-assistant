@@ -145,8 +145,12 @@ Read this before writing the first document — it shapes how the outlines below
   worse. Write "A lane is a recurring origin–destination corridor…" rather than a bullet.
 - **No single table over ~800 characters.** Oversized tables split at row boundaries with no header
   repetition — see the table edge case in [`pipeline-spec.md`](pipeline-spec.md).
-- **Aim sections at 800–1,600 characters.** Sections under 500 chars get merged; sections just over
-  800 leave an awkward tail.
+- **Aim sections at 800–1,600 characters.** Sections under 500 chars get merged backward into the
+  previous chunk; sections just over 800 leave an awkward tail.
+- **The opening section is the exception — author it at ≥500 characters.** A document's first chunk
+  has no predecessor, so it is the one piece `merge_short` can never rescue; a short
+  `"Introduction"` is a permanent sub-500 chunk. See § Settled decisions D1 in
+  [`pipeline-spec.md`](pipeline-spec.md).
 - **Use the outline headings as the actual H2s** — they become `metadata.section` verbatim, so pick
   one casing convention and hold it across every document.
 

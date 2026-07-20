@@ -10,7 +10,7 @@ Seeds the submission README's **Conclusions** section, worth 5 points (`spec:77`
 
 | # | Risk | Mitigation in the design | Observed after run | Verdict |
 |---|---|---|---|---|
-| 1 | **Residual short chunks.** Final chunks of documents and merged short sections fall under 500 chars. | `merge_short` with backward merge for terminal pieces; the validation report counts outliers. Report the number honestly rather than padding text to hit a number. See [`pipeline-spec.md`](pipeline-spec.md) **D1** — this risk is larger than the design assumed. | | |
+| 1 | **Residual short chunks.** Some chunk bodies fall under 500 chars — most often a section's trailing piece, a whole short section, or a document's opening piece. | `merge_short` merges any undersized piece backward; the validation report counts what survives. Simulation says single-digit percent, and zero bodies under 250 chars. Report the real number honestly rather than padding text to hit it. See § Settled decisions **D1** in [`pipeline-spec.md`](pipeline-spec.md). | | |
 | 2 | **Breadcrumb overhead.** The prefix consumes 40–90 chars of every chunk's budget and repeats across a section's chunks. | Accepted trade for standalone readability. Improvement: shorten long H1 titles, or drop the title from the breadcrumb when the section name already disambiguates. | | |
 | 3 | **Overlap quality.** A naive 150-char tail can start mid-sentence. | Improvement: snap the overlap window back to the previous sentence boundary so repeated context reads cleanly. | | |
 | 4 | **List- and table-heavy sections chunk worse than prose.** Vocabulary and checklist sections fragment badly and embed poorly. | Author those sections as full sentences ("A lane is…"). Guidance is in [`corpus-plan.md`](corpus-plan.md). | | |
@@ -30,7 +30,7 @@ hypothesis into the graded conclusion:
 
 - documents processed, chunks produced, chunks per document
 - `text` length: min / mean / max, and a rough histogram
-- count and percentage of sub-500 bodies (D1's real magnitude)
+- count and percentage of sub-500 bodies, and how many are unmergeable first pieces (D1's real magnitude — the simulation predicted single-digit percent)
 - count of chunks produced by a merge, and by which merge rule
 - number of sections that fitted in a single chunk (zero-overlap by construction)
 - whether a rerun produced a byte-identical file

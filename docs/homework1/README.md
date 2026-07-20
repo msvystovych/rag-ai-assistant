@@ -37,7 +37,7 @@ placeholders unfilled — it lands at 40 / 50. The gap is execution, not design.
 
 1. **This file** — status, decisions, and the ranked backlog below.
 2. [`corpus-plan.md`](corpus-plan.md) — read § Sanitization, then the outlines. **This is the work.**
-3. [`pipeline-spec.md`](pipeline-spec.md) — settle the open decisions at the top, then implement.
+3. [`pipeline-spec.md`](pipeline-spec.md) — the splitting rules, the chunk contract, and the script brief. Nothing is left open; implement it as written.
 4. When the corpus exists: run the script, then fill the repo-root `README.md`'s two placeholders.
 
 ## Files
@@ -116,8 +116,10 @@ explain line by line, that is a poor trade. If a non-Markdown source ever genuin
 | 6 | **Check the real chunk-length distribution** and tune the merge threshold if the residual fraction is embarrassing. Re-chunking is one command. | risk to 15 pts | Small |
 | 7 | Optional: `tests/` — above rubric, zero points, cheap credibility. | 0 pts | Medium |
 
-**Before writing the splitter**, resolve the two open decisions at the top of
-[`pipeline-spec.md`](pipeline-spec.md) — both change what `merge_short` does.
+The merge decisions are settled (2026-07-21) — see § Settled decisions in
+[`pipeline-spec.md`](pipeline-spec.md). `merge_short` is one rule: any piece under 500 chars merges
+backward into its predecessor while the result stays ≤1000. Expect single-digit-percent sub-500
+residuals, not zero; the script counts and reports them.
 
 ## The one way to lose 10 points after doing all the work
 
