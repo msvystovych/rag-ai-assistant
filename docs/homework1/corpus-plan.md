@@ -44,7 +44,9 @@ logistics service providers across Europe").
 
 - Internal service names, schemas, table names, code, or internal processes
 - Any personally identifiable information
-- Employment tenure dates
+- Employment tenure dates — **anywhere in this repository**, not just in `data/raw/`. The earlier
+  rule carved out planning documents; that carve-out is withdrawn, because the planning documents
+  ship with the submission too.
 - Any figure not in the allowlist above, however innocuous it seems
 
 ### Authoring voice rule
@@ -65,9 +67,11 @@ The migration case study (document 3) is **explicitly a generic composite** of s
 strangler-fig practice, anchored only by the approved end-state figures. Say so in its
 introduction, and mirror the note in the submission README.
 
-### Pre-submission grep pass
+### Grep pass — sweep 1 of 2, run this one while authoring
 
-Sweep `data/raw/` for leaked specifics before chunking — fixing prose after a run means re-running.
+Scoped to `data/raw/` and run **before chunking** — fixing prose after a run means re-running.
+The second sweep (whole-repo, run last) is in [`README.md`](README.md) § Pre-submission gate; these
+two are deliberately different checks, not a drifted duplicate.
 
 ```bash
 # 1. Numbers that are NOT on the allowlist
@@ -132,6 +136,19 @@ document_type: concept-guide
 **Section metadata** comes from each document's H2/H3 headings — the outlines below define them.
 The H1 is the document title; any body before the first H2 becomes an `"Introduction"` section.
 So `metadata.section` is never the title. Full rule: [`pipeline-spec.md`](pipeline-spec.md).
+
+## Authoring guidance
+
+Read this before writing the first document — it shapes how the outlines below should be written.
+
+- **Prefer prose over lists and tables.** Vocabulary and checklist sections chunk badly and embed
+  worse. Write "A lane is a recurring origin–destination corridor…" rather than a bullet.
+- **No single table over ~800 characters.** Oversized tables split at row boundaries with no header
+  repetition — see the table edge case in [`pipeline-spec.md`](pipeline-spec.md).
+- **Aim sections at 800–1,600 characters.** Sections under 500 chars get merged; sections just over
+  800 leave an awkward tail.
+- **Use the outline headings as the actual H2s** — they become `metadata.section` verbatim, so pick
+  one casing convention and hold it across every document.
 
 ---
 
@@ -240,17 +257,6 @@ Author later. These unlock queries on visibility, telemetry, and payments.
 *Approved figures:* automated payment solutions · 8,500+ LSPs.
 
 ---
-
-## Authoring guidance
-
-- **Prefer prose over lists and tables.** Vocabulary and checklist sections chunk badly and embed
-  worse. Write "A lane is a recurring origin–destination corridor…" rather than a bullet.
-- **No single table over ~800 characters.** Oversized tables split at row boundaries with no header
-  repetition — see the table edge case in [`pipeline-spec.md`](pipeline-spec.md).
-- **Aim sections at 800–1,600 characters.** Sections under 500 chars get merged; sections just over
-  800 leave an awkward tail.
-- **Use the outline headings as the actual H2s** — they become `metadata.section` verbatim, so pick
-  one casing convention and hold it across every document.
 
 ## Domain vocabulary
 

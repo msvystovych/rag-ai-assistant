@@ -90,7 +90,7 @@ LangChain.
 
 | Parameter | Value | Measured on | Rationale |
 |---|---|---|---|
-| `chunk_size` | **800 chars** (target) | the **body**, before the breadcrumb | Upper-middle of the spec's 500–1000 band. Dense technical prose needs room for a complete thought — pattern, why, trade-off — and 800 leaves ~200 chars of headroom for the prefix. ~150–200 tokens: inside any embedding window, still precise for retrieval. |
+| `chunk_size` | **800 chars** (target) | the **body**, before the breadcrumb | Upper-middle of the spec's 500–1000 band. Dense technical prose needs room for a complete thought — pattern, why, trade-off — and 800 leaves ~200 chars of headroom for the prefix. ~150–200 tokens: inside any embedding window, still precise for retrieval. **800, not 900:** early drafts disagreed; 900 leaves too little headroom once a long breadcrumb is prepended. |
 | `chunk_overlap` | **150 chars** | the body | ≈19% of `chunk_size`, the top of the standard 10–20% band. Carries a full sentence across boundaries so boundary-crossing facts are retrievable from either side, without inflating the index. |
 | `min_chunk` | **500 chars** | the body | Floor for merging. |
 | **hard ceiling** | **1000 chars** | the **final `text`, breadcrumb included** | The spec's upper bound. `validate()` fails the run if any emitted chunk exceeds it. |
@@ -391,25 +391,25 @@ diagnostic message. A zero-chunk run is never a silent success.
 
 ---
 
-## Optional test checklist
+## Optional tests
 
-**Above rubric** — no criterion in `spec:70-78` awards points for tests. This is cheap credibility
-and a genuine safety net when you re-tune `chunk_size` for the retrieval homework. Keep fixtures
-inline or in `tests/fixtures/*.md`; do **not** test against `data/raw/`, which will change as you
-author it.
+**Above rubric — zero points** (`spec:70-78` awards none for tests). Cheap credibility, and a
+genuine safety net when you re-tune `chunk_size` for the retrieval homework.
 
-1. Every `text` ≤ 1000 chars, breadcrumb included.
-2. Every non-merged body ≤ 800 chars.
-3. Every sub-500 body is flagged in the report; none are silent.
-4. Consecutive chunks **of the same section** share 100–200 chars — **except** merge-produced pairs, which share 0 (D2).
-5. Chunks spanning a heading share no overlap.
-6. Every chunk carries all 5 required + 5 recommended fields.
-7. `a-b.md` + `a_b.md` → the `document_id` collision is *detected*, not silently merged.
-8. Within each `document_id`, `chunk_index` is exactly `1..N`.
-9. Two runs into two paths produce byte-identical files.
-10. A chunk spans two `##` sections **only** when a short-section merge produced it.
-11. The overlap region appears exactly once in a merged chunk.
-12. `data/raw/` with 2 files → non-zero exit naming the ≥3 requirement.
-13. A zero-byte `.md` → diagnostic error, never a silent zero-chunk pass.
-14. A `.md` with no front-matter → diagnostic error.
-15. Every emitted line validates against [`assets/chunk.schema.json`](assets/chunk.schema.json).
+If you write `tests/`, assert the invariants already stated above — the Parameters and Merge-rules
+tables, the overlap-scope rules, the `validate()` rule table, and the schema — plus the four error
+paths (<3 source files · empty file · missing front-matter · `document_id` collision between
+`a-b.md` and `a_b.md`, which must be *detected*, not silently merged) and determinism (two runs,
+byte-identical output).
+
+Two traps worth naming because a naive assertion gets them wrong:
+
+- **Overlap.** "Consecutive chunks share 100–200 chars" holds only for same-section pairs that a
+  merge did not produce. Cross-heading pairs and merge-produced pairs legitimately share 0 (D2).
+- **Size.** Assert `len(text) <= 1000`, never `<= 800` — 800 bounds the body, 1000 bounds the
+  emitted text.
+
+Keep fixtures inline or in `tests/fixtures/*.md`. Do **not** test against `data/raw/`, which will
+change as you author it. [`assets/chunks.sample.jsonl`](assets/chunks.sample.jsonl) is a useful
+expected-*shape* fixture for the metadata-completeness and schema-conformance tests, but it is
+hand-written and is not the pipeline's output.

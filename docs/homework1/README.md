@@ -4,7 +4,9 @@ Design notes for the knowledge base. **The graded deliverable is the repo-root `
 folder is the reasoning behind it and is not itself submitted for marks.
 
 Assignment spec: [`../tasks/Домашнє завдання №1 — Підготовка knowl`](../tasks/Домашнє%20завдання%20№1%20—%20Підготовка%20knowl).
-Read the spec itself; these notes never paraphrase it.
+Read the spec itself; these notes never paraphrase it. (The file has no extension, so links to it
+must percent-encode the spaces. Renaming both specs to `homework1-spec.md` / `homework2-spec.md`
+with `git mv` would be an improvement — the content is unchanged, so `spec:NN` citations still hold.)
 
 **Subject area:** a chatbot answering freight-exchange / logistics-platform engineering questions —
 domain concepts, CQRS + Event Sourcing, a monolith-to-microservices case study, Kafka telemetry,
@@ -31,6 +33,13 @@ what actually happened. Both are pre-run placeholders today.
 Executed faithfully the plan is worth 45–50. Executed carelessly — leaving the two README
 placeholders unfilled — it lands at 40 / 50. The gap is execution, not design.
 
+## Start here
+
+1. **This file** — status, decisions, and the ranked backlog below.
+2. [`corpus-plan.md`](corpus-plan.md) — read § Sanitization, then the outlines. **This is the work.**
+3. [`pipeline-spec.md`](pipeline-spec.md) — settle the open decisions at the top, then implement.
+4. When the corpus exists: run the script, then fill the repo-root `README.md`'s two placeholders.
+
 ## Files
 
 | File | What it is |
@@ -40,6 +49,32 @@ placeholders unfilled — it lands at 40 / 50. The gap is execution, not design.
 | [`reflection.md`](reflection.md) | Risk register; becomes the submission README's Conclusions |
 | [`assets/chunk.schema.json`](assets/chunk.schema.json) | JSON Schema 2020-12 — validates every line of `chunks.jsonl`; owns the `document_type` enum |
 | [`assets/chunks.sample.jsonl`](assets/chunks.sample.jsonl) | 4 hand-written reference chunks — a shape fixture, **not** pipeline output. Retire once real output exists. |
+
+> ⚠️ The samples are illustrative only. Their `chunk_index` values imply roughly one chunk per
+> section, while the sizing rule predicts ~9 per document. Never paste them into the submission
+> README — they will match no line of the real `chunks.jsonl`.
+
+## Target repository layout
+
+Only `README.md`, `.gitignore` and `docs/` exist today. Everything marked *(to create)* is
+outstanding work.
+
+```
+rag-ai-assistant/
+├── README.md                           # the graded submission (placeholders unfilled)
+├── .gitignore
+├── requirements.txt                    # (to create) empty — stdlib only, Python >= 3.9
+├── data/
+│   ├── raw/                            # (to create) the authored .md documents
+│   └── processed/
+│       └── chunks.jsonl                # (to create) generated; commit it — it is graded
+├── scripts/
+│   └── prepare_knowledge_base.py       # (to create)
+├── tests/                              # (optional, above rubric)
+└── docs/
+    ├── tasks/                          # assignment specs
+    └── homework1/                      # this folder — planning artifacts
+```
 
 ## Decisions
 
@@ -58,8 +93,8 @@ Resolved during planning — revisitable, but change them in **one** place:
 
 | # | Decision | Rationale |
 |---|---|---|
-| 5 | Target `chunk_size` = **800** | Leaves ~200 chars of headroom under the 1000 cap for the breadcrumb prefix. |
-| 6 | `chunk_index` is **1-based** | Matches the spec's own sample (`chunk_index: 1` ↔ `..._chunk_001`). |
+| 5 | Target `chunk_size` = **800**, not 900 | See [`pipeline-spec.md`](pipeline-spec.md) § Parameters — sole owner. |
+| 6 | `chunk_index` is **1-based** | See [`pipeline-spec.md`](pipeline-spec.md) § Fields — sole owner. |
 | 7 | `document_type` vocabulary | `concept-guide` · `architecture-guide` · `case-study` · `playbook`. The enum in [`assets/chunk.schema.json`](assets/chunk.schema.json) is the **single** source of truth. |
 | 8 | Sample-chunk `document_id`s follow the real document filenames | Keeps the samples consistent with the corpus plan. |
 | 9 | Corpus is **100% self-authored Markdown** | Therefore the loader is markdown-only by design — no HTML/PDF/TXT readers for inputs that cannot occur. |
@@ -96,7 +131,8 @@ Tick every box before submitting:
 
 - [ ] ≥3 (ideally 4) documents exist in `data/raw/` and read cleanly
 - [ ] No unapproved real-world specifics leaked — run the grep pass in [`corpus-plan.md`](corpus-plan.md)
-- [ ] The employer-name sweep returns nothing: `grep -rniE '<your-brand-alternation>' README.md docs/ data/`
+- [ ] Employer-name sweep, **sweep 2 of 2** — whole-repo, run last (sweep 1 is `data/raw/`-scoped,
+      in [`corpus-plan.md`](corpus-plan.md)): `grep -rniE '<your-brand-alternation>' README.md docs/ data/`
 - [ ] `python scripts/prepare_knowledge_base.py` exits 0 and prints its summary
 - [ ] `data/processed/chunks.jsonl` exists, is committed, and every line parses
 - [ ] Every line validates against [`assets/chunk.schema.json`](assets/chunk.schema.json)
