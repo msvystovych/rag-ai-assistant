@@ -11,7 +11,7 @@ rows (`spec:70-78`) grades a **physical artifact**, and none of them exist in th
 
 Verified repo state: `git ls-files` tracks only `.gitignore` and three Markdown files under
 `docs/`. There is no `data/`, no `data/raw/`, no `data/processed/chunks.jsonl`, no `scripts/`,
-no `notebooks/`, no `tests/`, no `requirements.txt`, and no root `README.md`.
+no `notebooks/`, no `tests/`, no `requirements.txt`, and no root `../../README.md`.
 
 ---
 
@@ -38,7 +38,7 @@ on what actually happened. Both are currently pre-run placeholders.
 | Source documents | `data/raw/` | ❌ missing |
 | Prep script or notebook | `scripts/prepare_knowledge_base.py` | ❌ missing |
 | Processed chunks | `data/processed/chunks.jsonl` | ❌ missing |
-| README | `README.md` | ❌ missing (draft only, in `templates/`) |
+| README | `../../README.md` | ❌ missing (draft only, in `templates/`) |
 
 ---
 
@@ -49,7 +49,7 @@ on what actually happened. Both are currently pre-run placeholders.
 | 1 | **Author the corpus.** Write the core four documents (≈5,600–7,200 words). Nothing downstream can run until ≥3 exist. | 5 pts directly, 30 more indirectly | Large — this is the real work |
 | 2 | **Write `scripts/prepare_knowledge_base.py`.** [`07-pipeline-brief.md`](07-pipeline-brief.md) specifies 10 functions; realistically 200–300 lines of stdlib Python. Carries **no rubric row of its own** yet produces every artifact worth 35 points. | gates 35 pts | Medium |
 | 3 | **Run it** → `data/processed/chunks.jsonl`, and commit the output. | 5 pts | Small |
-| 4 | **Write the real `README.md`** from [`templates/README-submission.md`](templates/README-submission.md), covering all six sections of `spec:58-64`. | 10 pts | Medium |
+| 4 | **Write the real `../../README.md`** from [`templates/README-submission.md`](templates/README-submission.md), covering all six sections of `spec:58-64`. | 10 pts | Medium |
 | 5 | **Regenerate the 3–5 example chunks** from the real corpus. The four in `assets/` are hand-written and will not match any produced line. | part of row 5 | Small |
 | 6 | **Rewrite Conclusions with real stats** — length distribution, residual counts, actual failures — replacing the pre-run hypotheses. | part of row 6 | Small |
 | 7 | **Check the real chunk-length distribution** and tune the merge threshold. The only self-acknowledged risk on the 15-point chunking row. | risk to 15 pts | Small |
@@ -63,7 +63,7 @@ on what actually happened. Both are currently pre-run placeholders.
 ## The one way to lose 10 points after doing all the work
 
 `templates/README-submission.md` contains two placeholder sections — *Example chunks* and
-*Conclusions* — mapping to two 5-point rubric rows. Copying that file to `README.md` and
+*Conclusions* — mapping to two 5-point rubric rows. Copying that file to `../../README.md` and
 submitting it with the placeholders intact scores **zero on both rows**. This is the single
 highest-probability failure mode in the whole plan, which is why the template lives in
 `templates/` and not at the repo root.
@@ -79,7 +79,7 @@ Tick every box before submitting:
 - [ ] Every line validates against `assets/chunk.schema.json`
 - [ ] `chunk_index` is contiguous 1..N within each `document_id`; all `chunk_id`s unique
 - [ ] No chunk `text` exceeds 1000 chars; sub-500 residuals counted and reported honestly
-- [ ] `README.md` exists at the repo root with all six sections of `spec:58-64`
+- [ ] `../../README.md` exists at the repo root with all six sections of `spec:58-64`
 - [ ] Its *Example chunks* section holds 3–5 **real** lines from `chunks.jsonl`, each commented
 - [ ] Its *Conclusions* section reports **real** run statistics, not the pre-run hypotheses
 - [ ] Sources table lists exactly the documents that actually exist (delete unwritten extension rows)
