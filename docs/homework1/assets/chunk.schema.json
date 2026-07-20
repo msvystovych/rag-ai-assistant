@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/msvystovych/rag-ai-assistant/docs/homework1/assets/chunk.schema.json",
   "title": "RAG knowledge-base chunk",
-  "description": "One line of data/processed/chunks.jsonl. Shape follows the homework spec's own sample chunk: chunk_id and text at the top level, everything else nested under metadata. See 06-chunk-schema.md for the field-by-field generation rules.",
+  "description": "One line of data/processed/chunks.jsonl. Shape follows the homework spec's own sample chunk: chunk_id and text at the top level, everything else nested under metadata. See ../pipeline-spec.md for the field-by-field generation rules.",
   "type": "object",
   "required": ["chunk_id", "text", "metadata"],
   "additionalProperties": false,
@@ -14,7 +14,7 @@
     },
     "text": {
       "type": "string",
-      "description": "Breadcrumb prefix ('<Doc Title> > <Section>. ') followed by the chunk body. Hard ceiling 1000 chars INCLUDING the prefix; the splitter target is 800 (see 05-chunking-strategy.md).",
+      "description": "Breadcrumb prefix ('<Doc Title> > <Section>. ') followed by the chunk body. Hard ceiling 1000 chars INCLUDING the prefix; the splitter target is 800 (see ../pipeline-spec.md).",
       "minLength": 1,
       "maxLength": 1000
     },
@@ -57,7 +57,7 @@
         },
         "document_type": {
           "type": "string",
-          "description": "Canonical vocabulary — this enum is the single source of truth (see 04-corpus-plan.md)",
+          "description": "Canonical vocabulary — this enum is the single source of truth. Set per document via YAML front-matter in data/raw/*.md; see ../pipeline-spec.md.",
           "enum": ["concept-guide", "architecture-guide", "case-study", "playbook"]
         },
         "source_type": {
