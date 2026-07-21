@@ -5,8 +5,11 @@
 # chunks and query the vector index.
 openai==2.46.0
 chromadb==1.5.9
-numpy==2.5.1
 
-# Development / verification only.
+# Development only.
 pytest==9.1.1
-jsonschema==4.26.0
+
+# Not listed above and deliberately so: `jsonschema` validates data/processed/chunks.jsonl against
+# docs/homework1/assets/chunk.schema.json, but docs/homework1/pipeline-spec.md scopes it to a
+# throwaway venv rather than the graded dependency set. Install it ad hoc when you want to re-run
+# that check:  pip install jsonschema

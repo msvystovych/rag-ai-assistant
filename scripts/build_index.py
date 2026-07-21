@@ -3,8 +3,8 @@
 
   python scripts/build_index.py [--chunks ...] [--index-dir ...] [--model ...]
 
-Requires OPENAI_API_KEY in the environment. Writes index/manifest.json so retrieval can detect a
-stale or model-mismatched index instead of silently returning bad results.
+Requires OPENAI_API_KEY in the environment. Writes a manifest.json inside the index directory so
+retrieval can detect a stale or model-mismatched index instead of silently returning bad results.
 """
 
 from __future__ import annotations

@@ -346,7 +346,9 @@ own**, yet it produces every artifact worth 35 points.
 ### Dependencies
 
 Standard library only: `argparse`, `json`, `os`, `pathlib`, `re`, `unicodedata`, `dataclasses`,
-`sys`. Requires Python ≥ 3.9. `requirements.txt` stays empty.
+`sys`. Requires Python ≥ 3.9. **This script** needs nothing from `requirements.txt` — it runs on a
+bare interpreter. (`requirements.txt` is no longer empty: Homework #2's retrieval layer added
+`openai` and `chromadb`. That does not relax this script's stdlib-only constraint.)
 
 The corpus is 100% self-authored Markdown by design, so the loader is markdown-only — no HTML/PDF/
 plaintext readers for inputs that cannot occur.

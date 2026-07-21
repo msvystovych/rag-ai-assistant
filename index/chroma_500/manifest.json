@@ -1,0 +1,11 @@
+{
+  "embedding_model": "text-embedding-3-small",
+  "dimension": 1536,
+  "chunk_count": 116,
+  "collection": "logistics_chunks_500",
+  "chunks_file": "data/processed/chunks_500.jsonl",
+  "chunks_sha256": "9904db4d3c8ae7f3346a79dff7b050619474fc76e6fafc1568faf0d3a68f1666",
+  "vector_store": "chromadb 1.5.9",
+  "distance": "cosine",
+  "score": "1 - cosine_distance"
+}

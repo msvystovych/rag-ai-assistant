@@ -5,43 +5,55 @@
       "id": "q01",
       "category": "direct",
       "query": "What is a backhaul and why does it matter to a carrier?",
-      "expected_documents": ["freight_exchange_domain_primer"],
-      "comment": ""
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "comment": "Relevant. All three hits are from the right document and the Key Domain Vocabulary section does define backhaul. But top-1 opens mid-sentence (\"time and handling risk...\") because it carries an overlap tail, so the definition a reader wants is actually in top-3. Right section, imprecise chunk."
     },
     {
       "id": "q02",
       "category": "direct",
       "query": "How does CQRS separate the write model from the read models?",
-      "expected_documents": ["cqrs_event_sourcing_for_logistics"],
-      "comment": ""
+      "expected_documents": [
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "comment": "Relevant. Top-1 and top-2 tie at 0.582 and both come from Why CQRS Fits Freight; top-2 is the better answer because it opens with the definition, so the ordering between two near-identical scores is effectively arbitrary. Top-3 is a reasonable continuation."
     },
     {
       "id": "q03",
       "category": "direct",
       "query": "What is the strangler-fig pattern for migrating a monolith?",
-      "expected_documents": ["monolith_to_microservices_migration"],
-      "comment": ""
+      "expected_documents": [
+        "monolith_to_microservices_migration"
+      ],
+      "comment": "Highly relevant — the best result in the set. Top-1 (0.685) opens with the definition itself and all three hits are the Strangler-Fig Execution section in reading order. A direct query whose vocabulary matches the corpus is the easy case, and it behaves like one."
     },
     {
       "id": "q04",
       "category": "paraphrase",
       "query": "How do I stop my trucks from driving back empty after a delivery?",
-      "expected_documents": ["freight_exchange_domain_primer"],
-      "comment": ""
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "comment": "Partially relevant. The paraphrase deliberately avoids the word 'backhaul' and the retriever still finds the right document, but no retrieved chunk leads with the backhaul definition, and the score falls to 0.413 from 0.536 for the same concept asked directly (q01). This is the vocabulary-mismatch penalty made visible."
     },
     {
       "id": "q05",
       "category": "paraphrase",
       "query": "Why would you keep every change as a permanent record instead of just updating a row in a table?",
-      "expected_documents": ["cqrs_event_sourcing_for_logistics"],
-      "comment": ""
+      "expected_documents": [
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "comment": "Partially relevant. Top-1 is the correct document and genuinely about immutable events, but top-2 and top-3 leak into the migration and scaling documents — the paraphrase 'permanent record instead of updating a row' matches generic write-path language across the whole corpus. The only query whose top-3 spans three documents."
     },
     {
       "id": "q06",
       "category": "paraphrase",
       "query": "How can I release new code without users noticing any interruption?",
-      "expected_documents": ["scaling_and_zero_downtime_operations"],
-      "comment": ""
+      "expected_documents": [
+        "scaling_and_zero_downtime_operations"
+      ],
+      "comment": "Relevant. Despite the lowest-band score (0.431), all three hits are the Zero-Downtime Deployments section and top-1 opens on exactly the right sentence. Score magnitude and usefulness are not the same thing — a low absolute score with tight section clustering is a good result."
     },
     {
       "id": "q07",
@@ -51,7 +63,7 @@
         "monolith_to_microservices_migration",
         "cqrs_event_sourcing_for_logistics"
       ],
-      "comment": ""
+      "comment": "Highly relevant. All three hits are the Keeping Data In Sync Mid-Migration section, covering dual-write, read switch, and duplicate handling. The question spans two documents conceptually, but the migration document answers it completely, so a single-document result is correct rather than narrow."
     },
     {
       "id": "q08",
@@ -61,21 +73,23 @@
         "scaling_and_zero_downtime_operations",
         "freight_exchange_domain_primer"
       ],
-      "comment": ""
+      "comment": "Relevant, but partly for the wrong reason. Top-1 directly addresses what the 5,000 requests per second figure does and does not tell you. The score (0.646) is inflated by lexical overlap: the exact phrase appears in the document title, which the breadcrumb prepends to every chunk of that document. Semantically right, but this query cannot distinguish semantic from keyword matching."
     },
     {
       "id": "q09",
       "category": "cross-document",
       "query": "Who confirms that a delivery actually happened, and what does that confirmation trigger?",
-      "expected_documents": ["freight_exchange_domain_primer"],
-      "comment": ""
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "comment": "Partially relevant. Top-1 is the right section and does cover delivery confirmation triggering settlement, though it opens mid-sentence on the telematics signal rather than on proof of delivery. Top-2 drifts to CQRS Operational Realities on the strength of the word 'event'. The POD-to-settlement link is retrievable but not cleanly isolated in one chunk."
     },
     {
       "id": "q10",
       "category": "out-of-corpus",
       "query": "What is the best way to fine-tune a large language model on a custom dataset?",
       "expected_documents": [],
-      "comment": ""
+      "comment": "Not relevant — correctly so, and this is the most useful query in the set. Nothing in a logistics corpus answers a question about fine-tuning language models, and the top score drops to 0.266, well clear of the 0.413 in-corpus floor. But the system still returns three confidently formatted results: a pure retrieval layer has no way to say 'I don't know'. A score floor near 0.35 would be needed before this feeds an LLM."
     }
   ]
 }

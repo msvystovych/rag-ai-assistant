@@ -22,6 +22,7 @@ from rag_lib import REPO_ROOT, RetrievalError, SearchHit, Settings, open_collect
 DEFAULT_QUERIES = REPO_ROOT / "data" / "eval" / "test_queries.json"
 DEFAULT_OUTPUT = REPO_ROOT / "outputs" / "retrieval_examples.md"
 DEFAULT_RESULTS = REPO_ROOT / "outputs" / "retrieval_results.json"
+ANALYSIS_DOC = "docs/homework2/analysis.md"
 
 CATEGORY_BLURB = {
     "direct": "uses the corpus's own vocabulary",
@@ -50,6 +51,21 @@ def verdict(hits: list[SearchHit], expected: list[str]) -> str:
     if any(document in expected for document in top_documents):
         return "partial — an expected document appears below top-1"
     return "miss — no expected document in top-k"
+
+
+def score_table(records: list[dict[str, Any]]) -> list[str]:
+    by_category: dict[str, list[float]] = {}
+    for record in records:
+        if record["hits"]:
+            by_category.setdefault(record["category"], []).append(record["hits"][0]["score"])
+    lines = ["## Top-1 score by query category", "", "| Category | n | Mean top-1 | Range |", "|---|---|---|---|"]
+    for category, scores in by_category.items():
+        mean = sum(scores) / len(scores)
+        lines.append(
+            f"| {category} | {len(scores)} | {mean:.3f} | {min(scores):.3f} – {max(scores):.3f} |"
+        )
+    lines.append("")
+    return lines
 
 
 def render_markdown(records: list[dict[str, Any]], *, k: int, model: str) -> str:
@@ -90,10 +106,15 @@ def render_markdown(records: list[dict[str, Any]], *, k: int, model: str) -> str
         lines.append("---")
         lines.append("")
 
+    lines.extend(score_table(records))
+    lines.append(f"Where retrieval works and where it fails: [`{ANALYSIS_DOC}`](../{ANALYSIS_DOC})")
+    lines.append("")
     return "\n".join(lines)
 
 
-def run(settings: Settings, queries_path: Path, output_path: Path, results_path: Path, k: int) -> int:
+def run(
+    settings: Settings, queries_path: Path, output_path: Path, results_path: Path, k: int
+) -> int:
     queries = load_queries(queries_path)
     collection = open_collection(settings)
     records: list[dict[str, Any]] = []

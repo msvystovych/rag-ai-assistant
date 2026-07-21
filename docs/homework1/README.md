@@ -63,7 +63,7 @@ outstanding work.
 rag-ai-assistant/
 ├── README.md                           # the graded submission (placeholders unfilled)
 ├── .gitignore
-├── requirements.txt                    # (to create) empty — stdlib only, Python >= 3.9
+├── requirements.txt                    # HW2 deps only; the HW1 script needs none of them
 ├── data/
 │   ├── raw/                            # (to create) the authored .md documents
 │   └── processed/

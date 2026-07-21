@@ -10,14 +10,14 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import chromadb
 import httpx
 from chromadb.api.models.Collection import Collection
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MODEL = "text-embedding-3-small"
@@ -52,7 +52,9 @@ def load_dotenv(path: Path | None = None) -> None:
 class Settings:
     """The single place this project reads environment variables."""
 
-    openai_api_key: str
+    # repr=False so printing Settings — in a traceback, a debug print, or pytest --showlocals —
+    # can never dump the plaintext key.
+    openai_api_key: str = field(repr=False)
     embedding_model: str
     chunks_path: Path
     index_dir: Path
@@ -174,7 +176,14 @@ def embed_texts(
     vectors: list[list[float]] = []
     for start in range(0, len(texts), EMBED_BATCH_SIZE):
         batch = texts[start : start + EMBED_BATCH_SIZE]
-        response = api.embeddings.create(model=settings.embedding_model, input=batch)
+        try:
+            response = api.embeddings.create(model=settings.embedding_model, input=batch)
+        except OpenAIError as exc:
+            # A rejected key or an exhausted quota is the likeliest real failure here; without
+            # this the carefully worded diagnostics elsewhere are bypassed by a raw traceback.
+            raise RetrievalError(
+                f"embedding request failed for model {settings.embedding_model!r}: {exc}"
+            ) from exc
         ordered = sorted(response.data, key=lambda item: item.index)
         vectors.extend(list(item.embedding) for item in ordered)
         if progress:
@@ -192,7 +201,12 @@ def embed_query(query: str, settings: Settings, *, client: OpenAI | None = None)
 
 
 def manifest_path(index_dir: Path) -> Path:
-    return index_dir.parent / MANIFEST_NAME
+    """The manifest lives INSIDE its index directory.
+
+    Anchoring it to the parent made two indexes under the same parent (index/chroma and
+    index/chroma_500 in the chunk-size experiment) share — and silently overwrite — one manifest.
+    """
+    return index_dir / MANIFEST_NAME
 
 
 def _display_path(path: Path) -> str:
@@ -235,12 +249,29 @@ def read_manifest(settings: Settings) -> dict[str, Any]:
             f"{settings.embedding_model!r}. Chunks and queries must use the same model — "
             "rebuild the index or set RAG_EMBEDDING_MODEL to match."
         )
+    # Recording the digest without checking it is a safety net that never fires. An index built
+    # from a since-edited chunks.jsonl returns neighbours for text that is no longer in the repo.
+    indexed_digest = manifest.get("chunks_sha256")
+    if indexed_digest and settings.chunks_path.is_file():
+        current_digest = file_digest(settings.chunks_path)
+        if current_digest != indexed_digest:
+            raise RetrievalError(
+                f"{settings.chunks_path} has changed since the index was built "
+                f"(indexed {indexed_digest[:12]}…, current {current_digest[:12]}…). "
+                "The index would return chunks that no longer match the corpus — rebuild it:\n"
+                "  python scripts/build_index.py"
+            )
     return manifest
 
 
 def open_collection(settings: Settings, *, create: bool = False) -> Collection:
     settings.index_dir.mkdir(parents=True, exist_ok=True)
-    client = chromadb.PersistentClient(path=str(settings.index_dir))
+    # Telemetry defaults to on and would make an unmanaged network call outside this project's
+    # own timeout policy. Nothing here needs to phone home.
+    client = chromadb.PersistentClient(
+        path=str(settings.index_dir),
+        settings=chromadb.config.Settings(anonymized_telemetry=False),
+    )
     if create:
         if settings.collection_name in {c.name for c in client.list_collections()}:
             client.delete_collection(settings.collection_name)
@@ -249,7 +280,15 @@ def open_collection(settings: Settings, *, create: bool = False) -> Collection:
             embedding_function=None,
             configuration={"hnsw": {"space": "cosine"}},
         )
-    return client.get_collection(name=settings.collection_name, embedding_function=None)
+    try:
+        return client.get_collection(name=settings.collection_name, embedding_function=None)
+    except chromadb.errors.NotFoundError as exc:
+        # Translate the store's own error so a never-built index gives the same clear instruction
+        # as a missing manifest, rather than a raw binding traceback.
+        raise RetrievalError(
+            f"no collection {settings.collection_name!r} in {settings.index_dir}. "
+            "Build the index first:\n  python scripts/build_index.py"
+        ) from exc
 
 
 def search(
@@ -273,9 +312,19 @@ def search(
     )
     hits: list[SearchHit] = []
     ids = result["ids"][0]
-    documents = (result.get("documents") or [[]])[0]
-    metadatas = (result.get("metadatas") or [[]])[0]
-    distances = (result.get("distances") or [[]])[0]
+    # Name a missing field explicitly. Defaulting to [[]] and letting zip(strict=True) fail turns
+    # a structured absence into "argument 2 is shorter than argument 1", which names nothing.
+    columns: dict[str, list[Any]] = {}
+    for key in ("documents", "metadatas", "distances"):
+        column = result.get(key)
+        if column is None:
+            raise RetrievalError(f"the vector store returned no {key!r} for this query")
+        columns[key] = column[0]
+    documents, metadatas, distances = (
+        columns["documents"],
+        columns["metadatas"],
+        columns["distances"],
+    )
     for rank, (chunk_id, document, metadata, distance) in enumerate(
         zip(ids, documents, metadatas, distances, strict=True), start=1
     ):
