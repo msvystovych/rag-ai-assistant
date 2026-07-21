@@ -1,0 +1,81 @@
+{
+  "description": "Evaluation queries for the Homework #2 retrieval layer. `category` records why each query is in the set; `expected_documents` is the document_id(s) a good retriever should surface, used for a mechanical hit/miss verdict. `comment` is authored by hand AFTER inspecting a real run — it is the graded relevance judgement and must never be a placeholder.",
+  "queries": [
+    {
+      "id": "q01",
+      "category": "direct",
+      "query": "What is a backhaul and why does it matter to a carrier?",
+      "expected_documents": ["freight_exchange_domain_primer"],
+      "comment": ""
+    },
+    {
+      "id": "q02",
+      "category": "direct",
+      "query": "How does CQRS separate the write model from the read models?",
+      "expected_documents": ["cqrs_event_sourcing_for_logistics"],
+      "comment": ""
+    },
+    {
+      "id": "q03",
+      "category": "direct",
+      "query": "What is the strangler-fig pattern for migrating a monolith?",
+      "expected_documents": ["monolith_to_microservices_migration"],
+      "comment": ""
+    },
+    {
+      "id": "q04",
+      "category": "paraphrase",
+      "query": "How do I stop my trucks from driving back empty after a delivery?",
+      "expected_documents": ["freight_exchange_domain_primer"],
+      "comment": ""
+    },
+    {
+      "id": "q05",
+      "category": "paraphrase",
+      "query": "Why would you keep every change as a permanent record instead of just updating a row in a table?",
+      "expected_documents": ["cqrs_event_sourcing_for_logistics"],
+      "comment": ""
+    },
+    {
+      "id": "q06",
+      "category": "paraphrase",
+      "query": "How can I release new code without users noticing any interruption?",
+      "expected_documents": ["scaling_and_zero_downtime_operations"],
+      "comment": ""
+    },
+    {
+      "id": "q07",
+      "category": "cross-document",
+      "query": "How is data kept consistent between the old system and the new services during a migration?",
+      "expected_documents": [
+        "monolith_to_microservices_migration",
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "comment": ""
+    },
+    {
+      "id": "q08",
+      "category": "cross-document",
+      "query": "What has to be true for the platform to handle 5,000 requests per second?",
+      "expected_documents": [
+        "scaling_and_zero_downtime_operations",
+        "freight_exchange_domain_primer"
+      ],
+      "comment": ""
+    },
+    {
+      "id": "q09",
+      "category": "cross-document",
+      "query": "Who confirms that a delivery actually happened, and what does that confirmation trigger?",
+      "expected_documents": ["freight_exchange_domain_primer"],
+      "comment": ""
+    },
+    {
+      "id": "q10",
+      "category": "out-of-corpus",
+      "query": "What is the best way to fine-tune a large language model on a custom dataset?",
+      "expected_documents": [],
+      "comment": ""
+    }
+  ]
+}

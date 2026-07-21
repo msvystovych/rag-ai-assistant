@@ -1,0 +1,51 @@
+---
+document_type: architecture-guide
+---
+
+# CQRS and Event Sourcing in a Freight Platform
+
+## Why CQRS Fits Freight
+
+Command Query Responsibility Segregation separates the model that accepts state changes from the models that answer questions, and a freight exchange is one of the clearest cases for that separation because its traffic is profoundly asymmetric. A load is posted once, edited a handful of times, and booked once. Against that single write, the same load is read continuously by every carrier scanning a lane, by every saved search evaluated on a carrier's behalf, and — once it is moving — by every dispatcher and end customer refreshing a tracking view. Writes are rare, transactional, and rich in business rules. Reads are constant, tolerant of being a moment out of date, and want a flat shape that no normalized booking schema will produce cheaply.
+
+Serving both from one model forces a permanent compromise. A schema normalized enough to enforce booking invariants needs multi-way joins to answer a search query, and the indexes added to rescue that search then slow the very writes the schema was designed to protect. Separating the two sides buys independent optimization: the write model keeps a small, strongly consistent core focused on correctness, while read models are denormalized, duplicated freely, and shaped per use case — one for lane search, another for a carrier's active shipments, another for settlement. They also scale independently, which matters because search and tracking load grows with market participation while booking volume grows only with actual freight. The trade-off should be stated plainly: two models mean two things to keep in step, and the gap between them is eventual consistency.
+
+## The Command Side
+
+The write side of a freight platform is usually organized around a small number of aggregates, most naturally the load and the booking. An aggregate is a consistency boundary: everything inside it is updated in one atomic transaction, and everything outside it is reached only by identifier. A load aggregate typically owns its origin and destination, its pickup and delivery windows, its weight and equipment requirements, and its lifecycle state. A booking aggregate owns the commitment between a shipper and a carrier for a specific load, the agreed rate, and the terms under which it may be cancelled. Drawing these boundaries tightly is what keeps the write model small, and a small write model is the point — it is the only part of the system that must be strongly consistent.
+
+Commands are requests to change state, and they are validated before anything is persisted. A `BookLoad` command is checked against the aggregate's invariants: the load must still be open, the booking window must not have closed, the carrier must be permitted to take it, and the load must not already be committed elsewhere. Only when every invariant holds does the aggregate emit its events. That ordering matters, because an emitted event asserts that something *did* happen and cannot be retracted.
+
+Concurrency here is typically handled optimistically. Two carriers booking the same load at the same instant is the canonical race, and the standard defence is a version check on append: the aggregate's expected version accompanies the write, and the second writer's append fails and is retried against fresh state or rejected. Pessimistic locking trades a rare conflict for a permanent throughput ceiling.
+
+## Event Sourcing Basics
+
+Event Sourcing goes further than CQRS by changing what is stored. Instead of persisting current state and overwriting it on each change, the system persists the ordered sequence of events that produced that state, and current state becomes a derived value obtained by replaying them. The event store is append-only and its records are immutable: an event that was written is never edited and never deleted. A correction is expressed as a further event, in the way a ledger is corrected by a reversing entry rather than by erasing a line.
+
+The appeal in logistics is that the history is itself valuable. A conventional row records that a load is delivered; a stream records that it was posted at one rate, repriced, tendered to one carrier, declined, tendered to another, booked, collected late, and delivered — exactly the material a dispute, a penalty calculation, or a lane-performance analysis needs. That history is normally reconstructed after the fact from logs and audit tables of varying quality. Under Event Sourcing it is the primary record, and every derived view is provably consistent with it because every derived view is built from it.
+
+Rehydrating an aggregate means loading its stream and folding the events into an in-memory state object, which then validates the next command. Because that fold is a pure function it can be re-run at any time, so a defect in it can be fixed and the correct state recomputed — an option a mutate-in-place design does not offer, since its intermediate states were destroyed as they were overwritten. The cost is that reading state is no longer a single row lookup, which is why streams are kept short and aggregates small.
+
+## Designing Logistics Events
+
+Events are named in the past tense, because they record facts rather than intentions: `LoadPosted`, `LoadBooked`, `PositionUpdated`, `DeliveryConfirmed`. The command is `BookLoad`; the resulting fact is `LoadBooked`. This is more than a style rule — past-tense naming is a constant reminder that a consumer may not reject an event, only react to it, and that the writer had already committed by the time anyone else observed it.
+
+Granularity is the harder choice. Events that are too coarse, such as a generic `LoadUpdated` carrying an arbitrary bag of changed attributes, force every consumer to diff payloads to work out what happened, pushing business meaning out of the log and into each reader. Events that are too fine produce enormous streams and encode the current field layout as permanent history. The usual guidance is to model events at the granularity of business intent: a rate change and a pickup-window change are distinct facts with distinct consequences, so they are distinct events.
+
+Versioning must be planned before the first event is written, because history is immutable and old events outlive the code that produced them. Two approaches dominate. Weak schema evolution keeps changes strictly additive — new optional fields only, with defaults supplied by readers — so every existing event stays readable. When a genuinely breaking change is unavoidable, a new event type is introduced alongside the old one and an upcaster translates the legacy shape into the current one at read time, keeping that translation in one place rather than scattered across consumers. Renaming a field in place, or silently reinterpreting an existing one, is the change that corrupts a replay long afterwards.
+
+## Projections And Read Models
+
+A projection is a consumer that folds the event stream into a shape optimized for one kind of query. A lane-search index is the natural example: fed by posting, repricing, and booking events, it stores each open load flat and pre-joined, with the filters carriers actually use — corridor, equipment type, weight band, date window — as first-class indexed attributes. A tracking view is fed by position events and holds only the latest known position per shipment plus a short trail. A settlement view is fed by delivery and invoicing events. None of these needs to agree with the others on structure, and none needs to be a relational store; a search index, a key-value store, and a relational table are all reasonable projection targets for different query shapes.
+
+The defining property of a projection is that it is disposable. Because it is a pure function of the stream, it can be deleted and rebuilt whenever its shape must change, which turns a schema migration into a replay. That is the operational advantage of the pattern, and also the reason a projection should never hold state that is not derivable from events.
+
+Eventual consistency must be designed for rather than wished away. A load booked at one instant may remain visible in a search index briefly afterwards, and a user who acts on that stale row will have their command rejected by the write side. Practitioners generally handle this in the interface: render the outcome the user just caused from the command's own result instead of re-querying, indicate freshness where staleness is meaningful, and make the rejection explain what changed.
+
+## Operational Realities
+
+Long streams eventually make rehydration expensive, and the standard remedy is snapshotting: periodically persist the folded state at a known version, then replay only the events after it. A snapshot is a cache, never a source of truth, so it must be safe to delete and recompute — and it must be versioned with the fold logic, because a snapshot written by an older fold is not merely stale but wrong. Replay cost also governs projection rebuilds, which is why the stream is typically partitioned and rebuilds run against a shadow projection that is swapped in only once it has caught up.
+
+Schema evolution, snapshot invalidation, upcasting, and replay tooling are ongoing costs, which is why the pattern should be applied deliberately. In a platform composed of around 40 microservices, CQRS and Event Sourcing are applied selectively rather than uniformly: they earn their keep in the few contexts where history, auditability, or extreme read asymmetry dominate, and they are the wrong choice for a reference-data service or a boundary whose entire behaviour is a lookup. It is also coherent to adopt CQRS without Event Sourcing — separate read models fed by change events from a conventional store — capturing most of the read-scaling benefit at a fraction of the operational cost.
+
+The case is strongest around settlement. Automated payment solutions turn delivery confirmation into money movement, and any system that moves money is eventually asked to prove exactly why a given amount was paid to a given party. An unbroken, immutable event record answers that by construction: the sequence of facts that produced a payout is the stored artifact, not a reconstruction assembled after a dispute has started.

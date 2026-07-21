@@ -13,5 +13,8 @@ venv/
 # Local tool config (contains absolute machine paths)
 .claude/settings.local.json
 
+# Secrets — OPENAI_API_KEY lives here and must never be committed.
+.env
+
 # NEVER ignore data/, index/ or outputs/ — data/processed/chunks.jsonl is graded by Homework #1
 # and read back by Homework #2, which also grades index/ and outputs/.
