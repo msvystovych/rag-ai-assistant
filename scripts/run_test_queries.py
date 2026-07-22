@@ -17,7 +17,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from rag_lib import REPO_ROOT, RetrievalError, SearchHit, Settings, open_collection, search
+from rag_lib import (
+    REPO_ROOT,
+    RetrievalError,
+    SearchHit,
+    Settings,
+    open_collection,
+    search,
+)
 
 DEFAULT_QUERIES = REPO_ROOT / "data" / "eval" / "test_queries.json"
 DEFAULT_OUTPUT = REPO_ROOT / "outputs" / "retrieval_examples.md"
@@ -33,10 +40,25 @@ CATEGORY_BLURB = {
 
 
 def load_queries(path: Path) -> list[dict[str, Any]]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    queries: list[dict[str, Any]] = payload["queries"]
+    if not path.is_file():
+        raise RetrievalError(f"{path} not found")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RetrievalError(f"{path}: invalid JSON ({exc.msg})") from exc
+    queries = payload.get("queries") if isinstance(payload, dict) else None
+    if not isinstance(queries, list):
+        raise RetrievalError(f"{path}: expected a top-level 'queries' list")
     if len(queries) < 5:
         raise RetrievalError(f"{path}: the assignment requires at least 5 test queries")
+    for position, entry in enumerate(queries):
+        if (
+            not isinstance(entry, dict)
+            or not {"id", "category", "query"} <= entry.keys()
+        ):
+            raise RetrievalError(
+                f"{path}: query {position} must be an object with 'id', 'category', and 'query'"
+            )
     return queries
 
 
@@ -57,8 +79,15 @@ def score_table(records: list[dict[str, Any]]) -> list[str]:
     by_category: dict[str, list[float]] = {}
     for record in records:
         if record["hits"]:
-            by_category.setdefault(record["category"], []).append(record["hits"][0]["score"])
-    lines = ["## Top-1 score by query category", "", "| Category | n | Mean top-1 | Range |", "|---|---|---|---|"]
+            by_category.setdefault(record["category"], []).append(
+                record["hits"][0]["score"]
+            )
+    lines = [
+        "## Top-1 score by query category",
+        "",
+        "| Category | n | Mean top-1 | Range |",
+        "|---|---|---|---|",
+    ]
     for category, scores in by_category.items():
         mean = sum(scores) / len(scores)
         lines.append(
@@ -88,7 +117,9 @@ def render_markdown(records: list[dict[str, Any]], *, k: int, model: str) -> str
 
     for record in records:
         category = record["category"]
-        lines.append(f"## {record['id']} · {category} — {CATEGORY_BLURB.get(category, '')}")
+        lines.append(
+            f"## {record['id']} · {category} — {CATEGORY_BLURB.get(category, '')}"
+        )
         lines.append("")
         lines.append(f"Query: {record['query']}")
         lines.append("")
@@ -107,13 +138,19 @@ def render_markdown(records: list[dict[str, Any]], *, k: int, model: str) -> str
         lines.append("")
 
     lines.extend(score_table(records))
-    lines.append(f"Where retrieval works and where it fails: [`{ANALYSIS_DOC}`](../{ANALYSIS_DOC})")
+    lines.append(
+        f"Where retrieval works and where it fails: [`{ANALYSIS_DOC}`](../{ANALYSIS_DOC})"
+    )
     lines.append("")
     return "\n".join(lines)
 
 
 def run(
-    settings: Settings, queries_path: Path, output_path: Path, results_path: Path, k: int
+    settings: Settings,
+    queries_path: Path,
+    output_path: Path,
+    results_path: Path,
+    k: int,
 ) -> int:
     queries = load_queries(queries_path)
     collection = open_collection(settings)
@@ -148,7 +185,9 @@ def run(
 
     results_path.parent.mkdir(parents=True, exist_ok=True)
     results_path.write_text(
-        json.dumps({"model": settings.embedding_model, "k": k, "records": records}, indent=2)
+        json.dumps(
+            {"model": settings.embedding_model, "k": k, "records": records}, indent=2
+        )
         + "\n",
         encoding="utf-8",
     )

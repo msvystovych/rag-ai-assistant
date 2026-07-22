@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -31,14 +30,18 @@ from prepare_knowledge_base import (  # noqa: E402
 FRONT_MATTER = "---\ndocument_type: concept-guide\n---\n\n"
 
 
-def make_document(path: Path, *, sections: dict[str, str], title: str = "Test Title") -> Path:
+def make_document(
+    path: Path, *, sections: dict[str, str], title: str = "Test Title"
+) -> Path:
     body = "".join(f"## {name}\n\n{text}\n\n" for name, text in sections.items())
     path.write_text(f"{FRONT_MATTER}# {title}\n\n{body}", encoding="utf-8")
     return path
 
 
 def sentences(count: int, marker: str = "word") -> str:
-    return " ".join(f"This is {marker} sentence number {i} in the body." for i in range(count))
+    return " ".join(
+        f"This is {marker} sentence number {i} in the body." for i in range(count)
+    )
 
 
 class TestFrontMatter:
@@ -53,7 +56,9 @@ class TestFrontMatter:
 
     def test_unknown_document_type_is_an_error(self, tmp_path: Path) -> None:
         path = tmp_path / "doc.md"
-        path.write_text("---\ndocument_type: novel\n---\n\n# T\n\n## S\n\nBody.\n", encoding="utf-8")
+        path.write_text(
+            "---\ndocument_type: novel\n---\n\n# T\n\n## S\n\nBody.\n", encoding="utf-8"
+        )
         with pytest.raises(PipelineError, match="outside the schema enum"):
             load_document(path)
 
@@ -77,7 +82,9 @@ class TestNormalization:
 
 class TestSectionDerivation:
     def test_h1_is_title_and_body_before_h2_is_introduction(self) -> None:
-        title, sections = read_markdown("# Doc Title\n\nOpening prose.\n\n## First\n\nBody.\n")
+        title, sections = read_markdown(
+            "# Doc Title\n\nOpening prose.\n\n## First\n\nBody.\n"
+        )
         assert title == "Doc Title"
         assert sections[0][0] == "Introduction"
         assert sections[1][0] == "First"
@@ -87,7 +94,9 @@ class TestSectionDerivation:
         assert all(name != "Doc Title" for name, _ in sections)
 
     def test_headings_inside_code_fences_are_ignored(self) -> None:
-        _, sections = read_markdown("# T\n\n## Real\n\n```\n## Not A Heading\n```\n\nBody.\n")
+        _, sections = read_markdown(
+            "# T\n\n## Real\n\n```\n## Not A Heading\n```\n\nBody.\n"
+        )
         assert [name for name, _ in sections] == ["Real"]
 
 
@@ -113,7 +122,9 @@ class TestSplitSection:
         assert len(pieces) > 1
         # Only same-section pairs the packer produced carry overlap, and the carry length is
         # reported rather than inferred — pipeline-spec.md lists zero-overlap pairs as legitimate.
-        assert any(carry for _, carry in pieces), "same-section pieces should carry overlap"
+        assert any(carry for _, carry in pieces), (
+            "same-section pieces should carry overlap"
+        )
         for (earlier, _), (later, carry_len) in zip(pieces, pieces[1:]):
             if carry_len:
                 assert earlier.endswith(later[:carry_len].rstrip())
@@ -158,10 +169,15 @@ class TestMergeShort:
         merged = merge_short(pieces, min_chars=500, cap=2000)
         assert merged[0].text.count(tail) == 1
 
-    def test_carry_is_not_stripped_when_it_does_not_repeat_the_predecessor(self) -> None:
+    def test_carry_is_not_stripped_when_it_does_not_repeat_the_predecessor(
+        self,
+    ) -> None:
         # A coincidental suffix/prefix match must never delete source text: the guard is that the
         # tracked carry actually repeats the predecessor's tail.
-        pieces = [Piece("S", "A" * 800, True), Piece("S", "A" * 300, False, carry_len=0)]
+        pieces = [
+            Piece("S", "A" * 800, True),
+            Piece("S", "A" * 300, False, carry_len=0),
+        ]
         merged = merge_short(pieces, min_chars=500, cap=2000)
         joined = "".join(p.text for p in merged).replace(" ", "").replace("\n", "")
         assert joined == "A" * 1100, "no source text may be dropped"
@@ -170,23 +186,35 @@ class TestMergeShort:
         pieces = [Piece("S", "x" * 600, True), Piece("S", "y" * 100, False)]
         merge_short(pieces, min_chars=500, cap=1000)
         assert pieces[0].text == "x" * 600
-        assert len(merge_short(pieces, min_chars=500, cap=1000)) == 1, "must be idempotent"
+        assert len(merge_short(pieces, min_chars=500, cap=1000)) == 1, (
+            "must be idempotent"
+        )
 
 
 class TestChunkDocument:
     def test_ids_indices_and_ceiling(self, tmp_path: Path) -> None:
-        path = make_document(tmp_path / "sample-doc.md", sections={"Alpha": sentences(300)})
-        chunks = chunk_document(load_document(path), Config(tmp_path, tmp_path / "o.jsonl"))
+        path = make_document(
+            tmp_path / "sample-doc.md", sections={"Alpha": sentences(300)}
+        )
+        chunks = chunk_document(
+            load_document(path), Config(tmp_path, tmp_path / "o.jsonl")
+        )
 
-        assert [c["metadata"]["chunk_index"] for c in chunks] == list(range(1, len(chunks) + 1))
+        assert [c["metadata"]["chunk_index"] for c in chunks] == list(
+            range(1, len(chunks) + 1)
+        )
         assert [c["chunk_id"] for c in chunks] == [
             f"sample_doc_chunk_{i:03d}" for i in range(1, len(chunks) + 1)
         ]
         assert all(len(c["text"]) <= 1000 for c in chunks)
 
     def test_breadcrumb_prefix_is_present(self, tmp_path: Path) -> None:
-        path = make_document(tmp_path / "doc-one.md", sections={"Alpha": sentences(30)}, title="T")
-        chunks = chunk_document(load_document(path), Config(tmp_path, tmp_path / "o.jsonl"))
+        path = make_document(
+            tmp_path / "doc-one.md", sections={"Alpha": sentences(30)}, title="T"
+        )
+        chunks = chunk_document(
+            load_document(path), Config(tmp_path, tmp_path / "o.jsonl")
+        )
         assert chunks[0]["text"].startswith("T > Alpha. ")
 
     def test_overlong_breadcrumb_is_a_diagnostic_error(self, tmp_path: Path) -> None:
@@ -208,7 +236,9 @@ class TestDiscovery:
         for name in ("a-b.md", "a_b.md", "c-d.md"):
             make_document(tmp_path / name, sections={"S": sentences(20)})
         exit_code = main(["--raw-dir", str(tmp_path), "--out", str(out)])
-        assert exit_code == 1, "a-b.md and a_b.md both normalize to a_b — must not merge silently"
+        assert exit_code == 1, (
+            "a-b.md and a_b.md both normalize to a_b — must not merge silently"
+        )
 
 
 class TestValidate:
@@ -223,7 +253,9 @@ class TestValidate:
         return out
 
     @staticmethod
-    def row(index: int = 1, *, title: str = "T", section: str = "S", body: str = "") -> dict:
+    def row(
+        index: int = 1, *, title: str = "T", section: str = "S", body: str = ""
+    ) -> dict:
         body = body or "b" * 600
         return {
             "chunk_id": f"doc_chunk_{index:03d}",
@@ -244,29 +276,40 @@ class TestValidate:
     def test_rule_1_invalid_json(self, tmp_path: Path) -> None:
         out = tmp_path / "chunks.jsonl"
         out.write_text('{"chunk_id": "a"\n', encoding="utf-8")
-        assert any("invalid JSON" in e for e in validate(out, Config(tmp_path, out)).errors)
+        assert any(
+            "invalid JSON" in e for e in validate(out, Config(tmp_path, out)).errors
+        )
 
     def test_rule_2_missing_required_field(self, tmp_path: Path) -> None:
         row = self.row(1)
         del row["metadata"]["source_file"]  # type: ignore[index]
         out = self.write(tmp_path, [row])
-        assert any("missing field source_file" in e for e in validate(out, Config(tmp_path, out)).errors)
+        assert any(
+            "missing field source_file" in e
+            for e in validate(out, Config(tmp_path, out)).errors
+        )
 
     def test_rule_3_duplicate_chunk_id(self, tmp_path: Path) -> None:
         out = self.write(tmp_path, [self.row(1), self.row(1)])
-        assert any("duplicate chunk_id" in e for e in validate(out, Config(tmp_path, out)).errors)
+        assert any(
+            "duplicate chunk_id" in e
+            for e in validate(out, Config(tmp_path, out)).errors
+        )
 
     def test_rule_4_chunk_index_gap(self, tmp_path: Path) -> None:
         out = self.write(tmp_path, [self.row(1), self.row(3)])
-        assert any("contiguous" in e for e in validate(out, Config(tmp_path, out)).errors)
+        assert any("gap at 2" in e for e in validate(out, Config(tmp_path, out)).errors)
 
     def test_rule_5_text_over_hard_cap(self, tmp_path: Path) -> None:
         out = self.write(tmp_path, [self.row(1, body="b" * 1200)])
-        assert any("exceeds 1000" in e for e in validate(out, Config(tmp_path, out)).errors)
+        assert any(
+            "exceeds 1000" in e for e in validate(out, Config(tmp_path, out)).errors
+        )
 
     def test_rule_6_short_body_is_soft(self, tmp_path: Path) -> None:
         report = validate(
-            self.write(tmp_path, [self.row(1, body="b" * 100)]), Config(tmp_path, tmp_path / "o")
+            self.write(tmp_path, [self.row(1, body="b" * 100)]),
+            Config(tmp_path, tmp_path / "o"),
         )
         assert report.errors == [], "a residual must not fail the run"
         assert report.short_bodies and report.warnings
@@ -277,13 +320,19 @@ class TestValidate:
         row = self.row(1)
         row["text"] = "no breadcrumb here, just body text " + "b" * 600
         out = self.write(tmp_path, [row])
-        assert any("does not start with its breadcrumb" in e for e in validate(out, Config(tmp_path, out)).errors)
+        assert any(
+            "does not start with its breadcrumb" in e
+            for e in validate(out, Config(tmp_path, out)).errors
+        )
 
     def test_missing_title_or_section_is_a_hard_error(self, tmp_path: Path) -> None:
         row = self.row(1)
         del row["metadata"]["title"]  # type: ignore[index]
         out = self.write(tmp_path, [row])
-        assert any("missing 'title' or 'section'" in e for e in validate(out, Config(tmp_path, out)).errors)
+        assert any(
+            "missing 'title' or 'section'" in e
+            for e in validate(out, Config(tmp_path, out)).errors
+        )
 
 
 class TestEndToEnd:
@@ -299,7 +348,9 @@ class TestEndToEnd:
     def test_run_produces_valid_jsonl(self, corpus: tuple[Path, Path]) -> None:
         raw_dir, out = corpus
         assert main(["--raw-dir", str(raw_dir), "--out", str(out)]) == 0
-        rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+        rows = [
+            json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()
+        ]
         assert rows
         for row in rows:
             assert row["chunk_id"] and row["text"]
@@ -319,3 +370,45 @@ class TestEndToEnd:
         first = out.read_bytes()
         main(["--raw-dir", str(raw_dir), "--out", str(out)])
         assert out.read_bytes() == first
+
+    def test_dry_run_validates_and_writes_nothing(
+        self, corpus: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        raw_dir, out = corpus
+        assert main(["--raw-dir", str(raw_dir), "--out", str(out), "--dry-run"]) == 0
+        assert not out.exists(), "dry run must not write the output file"
+        assert not out.with_name(out.name + ".new").exists(), (
+            "the candidate must be cleaned up"
+        )
+        assert "chunks validated" in capsys.readouterr().out
+
+    def test_validation_failure_does_not_destroy_the_previous_good_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        raw_dir = tmp_path / "raw"
+        raw_dir.mkdir()
+        out = tmp_path / "chunks.jsonl"
+        for name in ("a.md", "b.md", "c.md"):
+            make_document(raw_dir / name, sections={"S": sentences(30)})
+        assert main(["--raw-dir", str(raw_dir), "--out", str(out)]) == 0
+        good = out.read_bytes()
+
+        # Inject a hard validation failure on the rerun; the candidate must be discarded and the
+        # existing good file left untouched — validation runs before the atomic promote.
+        import prepare_knowledge_base as pkb
+
+        real_validate = pkb.validate
+
+        def failing_validate(path: Path, cfg: pkb.Config) -> pkb.ValidationReport:
+            report = real_validate(path, cfg)
+            report.errors.append("injected failure")
+            return report
+
+        monkeypatch.setattr(pkb, "validate", failing_validate)
+        assert main(["--raw-dir", str(raw_dir), "--out", str(out)]) == 1
+        assert out.read_bytes() == good, (
+            "a failed rerun must not overwrite the good output"
+        )
+        assert not out.with_name(out.name + ".new").exists(), (
+            "the candidate must be cleaned up"
+        )

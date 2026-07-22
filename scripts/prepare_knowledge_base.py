@@ -23,7 +23,9 @@ DEFAULT_CHUNK_SIZE = 800
 DEFAULT_OVERLAP = 150
 DEFAULT_MIN_CHUNK = 500
 DEFAULT_HARD_CAP = 1000
-DOCUMENT_TYPES = frozenset({"concept-guide", "architecture-guide", "case-study", "playbook"})
+DOCUMENT_TYPES = frozenset(
+    {"concept-guide", "architecture-guide", "case-study", "playbook"}
+)
 LANGUAGE = "en"
 DOMAIN = "logistics-engineering"
 SOURCE_TYPE = "markdown"
@@ -363,7 +365,9 @@ def chunk_document(
         )
 
     chunks: list[dict[str, object]] = []
-    for index, piece in enumerate(merge_short(pieces, cfg.min_chunk, cap, stats), start=1):
+    for index, piece in enumerate(
+        merge_short(pieces, cfg.min_chunk, cap, stats), start=1
+    ):
         chunks.append(
             {
                 "chunk_id": f"{doc.document_id}_chunk_{index:03d}",
@@ -399,7 +403,9 @@ def validate(out_path: Path, cfg: Config) -> ValidationReport:
     text_lengths: list[int] = []
     body_lengths: list[int] = []
 
-    for line_number, line in enumerate(out_path.read_text(encoding="utf-8").splitlines(), start=1):
+    for line_number, line in enumerate(
+        out_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if not line.strip():
             continue
         try:
@@ -420,42 +426,57 @@ def validate(out_path: Path, cfg: Config) -> ValidationReport:
                 report.errors.append(f"line {line_number}: missing field {name}")
 
         chunk_id = row.get("chunk_id", "")
-        if chunk_id in seen_ids:
-            report.errors.append(f"duplicate chunk_id: {chunk_id}")
-        seen_ids.add(chunk_id)
+        if chunk_id:  # an empty id is already reported as a missing field above
+            if chunk_id in seen_ids:
+                report.errors.append(f"duplicate chunk_id: {chunk_id}")
+            seen_ids.add(chunk_id)
 
         document_id = metadata.get("document_id", "")
-        per_doc_indices.setdefault(document_id, []).append(metadata.get("chunk_index", -1))
+        per_doc_indices.setdefault(document_id, []).append(
+            metadata.get("chunk_index", -1)
+        )
 
         text = row.get("text", "")
         text_lengths.append(len(text))
         if len(text) > cfg.hard_cap:
-            report.errors.append(f"{chunk_id}: text {len(text)} chars exceeds {cfg.hard_cap}")
+            report.errors.append(
+                f"{chunk_id}: text {len(text)} chars exceeds {cfg.hard_cap}"
+            )
 
         title, section = metadata.get("title", ""), metadata.get("section", "")
         if not title or not section:
-            report.errors.append(f"{chunk_id}: metadata is missing 'title' or 'section'")
+            report.errors.append(
+                f"{chunk_id}: metadata is missing 'title' or 'section'"
+            )
             continue
         breadcrumb = _breadcrumb(title, section)
         if not text.startswith(breadcrumb):
             # Not a cosmetic mismatch: it means the row was not produced by this pipeline, or was
             # edited afterwards. Substituting the full length here would report a plausible body
             # size for a corrupt row and hide it from the residual count.
-            report.errors.append(f"{chunk_id}: text does not start with its breadcrumb {breadcrumb!r}")
+            report.errors.append(
+                f"{chunk_id}: text does not start with its breadcrumb {breadcrumb!r}"
+            )
             continue
         body_length = len(text) - len(breadcrumb)
         body_lengths.append(body_length)
         if body_length < cfg.min_chunk:
             report.short_bodies.append((chunk_id, body_length))
-            report.warnings.append(f"{chunk_id}: {body_length}-char residual (merge policy)")
+            report.warnings.append(
+                f"{chunk_id}: {body_length}-char residual (merge policy)"
+            )
 
     for document_id, indices in per_doc_indices.items():
-        if sorted(indices) != list(range(1, len(indices) + 1)):
-            report.errors.append(f"{document_id}: chunk_index is not contiguous 1..{len(indices)}")
+        expected = list(range(1, len(indices) + 1))
+        if sorted(indices) != expected:
+            gap = next((i for i in expected if i not in indices), expected[-1])
+            report.errors.append(f"{document_id}: chunk_index gap at {gap}")
 
     report.docs = len(per_doc_indices)
     report.chunks = len(text_lengths)
-    report.per_doc = {doc_id: len(idx) for doc_id, idx in sorted(per_doc_indices.items())}
+    report.per_doc = {
+        doc_id: len(idx) for doc_id, idx in sorted(per_doc_indices.items())
+    }
     if text_lengths:
         report.len_min = min(text_lengths)
         report.len_max = max(text_lengths)
@@ -478,7 +499,9 @@ def _print_summary(report: ValidationReport, cfg: Config, stats: MergeStats) -> 
     print(f"body len  : min {report.body_len_min} / max {report.body_len_max}")
     residuals = len(report.short_bodies)
     share = (residuals / report.chunks * 100) if report.chunks else 0.0
-    print(f"sub-{cfg.min_chunk} bodies: {residuals} ({share:.1f}%) — reported, not padded")
+    print(
+        f"sub-{cfg.min_chunk} bodies: {residuals} ({share:.1f}%) — reported, not padded"
+    )
     print(
         f"merge rule: {stats.candidates} candidate(s), {stats.merged} merged, "
         f"{stats.refused} refused by the <={cfg.hard_cap}-char cap"
@@ -491,7 +514,9 @@ def _print_summary(report: ValidationReport, cfg: Config, stats: MergeStats) -> 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
-    parser.add_argument("--out", dest="out_path", type=Path, default=Path("data/processed/chunks.jsonl"))
+    parser.add_argument(
+        "--out", dest="out_path", type=Path, default=Path("data/processed/chunks.jsonl")
+    )
     parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
     parser.add_argument("--overlap", type=int, default=DEFAULT_OVERLAP)
     parser.add_argument("--min-chunk", type=int, default=DEFAULT_MIN_CHUNK)
@@ -533,20 +558,30 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    if cfg.dry_run:
-        print(f"dry run: {len(chunks)} chunks from {len(paths)} documents (nothing written)")
-        return 0
-
-    write_jsonl(chunks, cfg.out_path)
-    report = validate(cfg.out_path, cfg)
+    # Validate a candidate file, not the live one: a validation failure must never destroy the
+    # previous good chunks.jsonl, and --dry-run must actually check the corpus rather than skip
+    # validation entirely.
+    cfg.out_path.parent.mkdir(parents=True, exist_ok=True)
+    candidate = cfg.out_path.with_name(cfg.out_path.name + ".new")
+    write_jsonl(chunks, candidate)
+    report = validate(candidate, cfg)
     _print_summary(report, cfg, merge_stats)
 
     if report.errors:
+        candidate.unlink(missing_ok=True)
         print("\nvalidation FAILED:", file=sys.stderr)
         for error in report.errors:
             print(f"  {error}", file=sys.stderr)
         return 1
 
+    if cfg.dry_run:
+        candidate.unlink(missing_ok=True)
+        print(
+            f"\ndry run: {report.chunks} chunks validated ({cfg.out_path} not written)"
+        )
+        return 0
+
+    os.replace(candidate, cfg.out_path)
     print(f"\nwrote {cfg.out_path}")
     return 0
 

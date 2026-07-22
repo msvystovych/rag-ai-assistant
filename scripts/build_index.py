@@ -34,17 +34,23 @@ def build(settings: Settings, *, progress: bool = True) -> int:
     collection = open_collection(settings, create=True)
     collection.add(
         ids=[chunk.chunk_id for chunk in chunks],
-        embeddings=vectors,
+        # chromadb's stub over-narrows embeddings to ndarray/invariant-List; a plain
+        # list[list[float]] is valid at runtime and is what embed_texts returns.
+        embeddings=vectors,  # type: ignore[arg-type]
         documents=[chunk.text for chunk in chunks],
         metadatas=[chunk.metadata for chunk in chunks],
     )
 
     indexed = collection.count()
     if indexed != len(chunks):
-        raise RetrievalError(f"collection holds {indexed} vectors but {len(chunks)} were supplied")
+        raise RetrievalError(
+            f"collection holds {indexed} vectors but {len(chunks)} were supplied"
+        )
 
     manifest = write_manifest(settings, dimension=dimension, chunk_count=indexed)
-    print(f"indexed {indexed} vectors of dimension {dimension} into {settings.index_dir}")
+    print(
+        f"indexed {indexed} vectors of dimension {dimension} into {settings.index_dir}"
+    )
     print(f"wrote {manifest}")
     return 0
 

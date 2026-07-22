@@ -10,13 +10,16 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 import chromadb
 import httpx
 from chromadb.api.models.Collection import Collection
+from chromadb.config import Settings as ChromaSettings
+from chromadb.errors import NotFoundError
 from openai import OpenAI, OpenAIError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -28,6 +31,22 @@ EMBED_BATCH_SIZE = 96
 
 class RetrievalError(Exception):
     """A condition that must stop the run with a diagnostic, never a silent empty result."""
+
+
+_Number = TypeVar("_Number", int, float)
+
+
+def _env_number(name: str, default: _Number, cast: Callable[[str], _Number]) -> _Number:
+    """Parse a numeric environment variable, turning a malformed value into a clear diagnostic."""
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return cast(raw)
+    except ValueError as exc:
+        raise RetrievalError(
+            f"environment variable {name}={raw!r} is not a valid number"
+        ) from exc
 
 
 def load_dotenv(path: Path | None = None) -> None:
@@ -85,13 +104,14 @@ class Settings:
             openai_api_key=api_key,
             embedding_model=embedding_model
             or os.environ.get("RAG_EMBEDDING_MODEL", DEFAULT_MODEL),
-            chunks_path=chunks_path or REPO_ROOT / "data" / "processed" / "chunks.jsonl",
+            chunks_path=chunks_path
+            or REPO_ROOT / "data" / "processed" / "chunks.jsonl",
             index_dir=index_dir or REPO_ROOT / "index" / "chroma",
             collection_name=collection_name
             or os.environ.get("RAG_COLLECTION", DEFAULT_COLLECTION),
-            connect_timeout=float(os.environ.get("RAG_CONNECT_TIMEOUT", "10")),
-            read_timeout=float(os.environ.get("RAG_READ_TIMEOUT", "60")),
-            max_retries=int(os.environ.get("RAG_MAX_RETRIES", "3")),
+            connect_timeout=_env_number("RAG_CONNECT_TIMEOUT", 10.0, float),
+            read_timeout=_env_number("RAG_READ_TIMEOUT", 60.0, float),
+            max_retries=_env_number("RAG_MAX_RETRIES", 3, int),
         )
 
 
@@ -113,7 +133,11 @@ class SearchHit:
 
     def preview(self, width: int = 220) -> str:
         collapsed = " ".join(self.text.split())
-        return collapsed if len(collapsed) <= width else collapsed[: width - 1].rstrip() + "…"
+        return (
+            collapsed
+            if len(collapsed) <= width
+            else collapsed[: width - 1].rstrip() + "…"
+        )
 
 
 def load_chunks(chunks_path: Path) -> list[Chunk]:
@@ -123,13 +147,26 @@ def load_chunks(chunks_path: Path) -> list[Chunk]:
             "  python scripts/prepare_knowledge_base.py"
         )
     chunks: list[Chunk] = []
-    for line_number, line in enumerate(chunks_path.read_text(encoding="utf-8").splitlines(), 1):
+    for line_number, line in enumerate(
+        chunks_path.read_text(encoding="utf-8").splitlines(), 1
+    ):
         if not line.strip():
             continue
         try:
             row = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise RetrievalError(f"{chunks_path}:{line_number}: invalid JSON ({exc.msg})") from exc
+            raise RetrievalError(
+                f"{chunks_path}:{line_number}: invalid JSON ({exc.msg})"
+            ) from exc
+        if not isinstance(row, dict):
+            raise RetrievalError(
+                f"{chunks_path}:{line_number}: expected a JSON object, got {type(row).__name__}"
+            )
+        for required in ("chunk_id", "text"):
+            if required not in row:
+                raise RetrievalError(
+                    f"{chunks_path}:{line_number}: missing field {required!r}"
+                )
         chunks.append(
             Chunk(
                 chunk_id=row["chunk_id"],
@@ -177,7 +214,9 @@ def embed_texts(
     for start in range(0, len(texts), EMBED_BATCH_SIZE):
         batch = texts[start : start + EMBED_BATCH_SIZE]
         try:
-            response = api.embeddings.create(model=settings.embedding_model, input=batch)
+            response = api.embeddings.create(
+                model=settings.embedding_model, input=batch
+            )
         except OpenAIError as exc:
             # A rejected key or an exhausted quota is the likeliest real failure here; without
             # this the carefully worded diagnostics elsewhere are bypassed by a raw traceback.
@@ -195,7 +234,9 @@ def embed_texts(
     return vectors
 
 
-def embed_query(query: str, settings: Settings, *, client: OpenAI | None = None) -> list[float]:
+def embed_query(
+    query: str, settings: Settings, *, client: OpenAI | None = None
+) -> list[float]:
     """Embed a user query with the SAME model used for the chunks."""
     return embed_texts([query], settings, client=client)[0]
 
@@ -241,7 +282,12 @@ def read_manifest(settings: Settings) -> dict[str, Any]:
         raise RetrievalError(
             f"{path} not found. Build the index first:\n  python scripts/build_index.py"
         )
-    manifest: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        manifest: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RetrievalError(
+            f"{path} is corrupt ({exc.msg}). Rebuild the index:\n  python scripts/build_index.py"
+        ) from exc
     indexed_model = manifest.get("embedding_model")
     if indexed_model != settings.embedding_model:
         raise RetrievalError(
@@ -270,7 +316,7 @@ def open_collection(settings: Settings, *, create: bool = False) -> Collection:
     # own timeout policy. Nothing here needs to phone home.
     client = chromadb.PersistentClient(
         path=str(settings.index_dir),
-        settings=chromadb.config.Settings(anonymized_telemetry=False),
+        settings=ChromaSettings(anonymized_telemetry=False),
     )
     if create:
         if settings.collection_name in {c.name for c in client.list_collections()}:
@@ -281,8 +327,10 @@ def open_collection(settings: Settings, *, create: bool = False) -> Collection:
             configuration={"hnsw": {"space": "cosine"}},
         )
     try:
-        return client.get_collection(name=settings.collection_name, embedding_function=None)
-    except chromadb.errors.NotFoundError as exc:
+        return client.get_collection(
+            name=settings.collection_name, embedding_function=None
+        )
+    except NotFoundError as exc:
         # Translate the store's own error so a never-built index gives the same clear instruction
         # as a missing manifest, rather than a raw binding traceback.
         raise RetrievalError(

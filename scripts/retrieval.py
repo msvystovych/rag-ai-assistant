@@ -39,7 +39,9 @@ def render(query: str, hits: list[SearchHit], *, preview_width: int = 220) -> st
     return "\n".join(blocks).rstrip()
 
 
-def run(settings: Settings, query: str, k: int, *, as_json: bool, preview_width: int) -> int:
+def run(
+    settings: Settings, query: str, k: int, *, as_json: bool, preview_width: int
+) -> int:
     collection = open_collection(settings)
     hits = search(query, settings, k=k, collection=collection)
     if as_json:
@@ -69,11 +71,11 @@ def run(settings: Settings, query: str, k: int, *, as_json: bool, preview_width:
 
 def interactive(settings: Settings, k: int, preview_width: int) -> int:
     collection = open_collection(settings)
-    print("Semantic search — blank line or Ctrl-D to exit.")
+    print("Semantic search — blank line, Ctrl-D or Ctrl-C to exit.")
     while True:
         try:
             query = input("\nquery> ").strip()
-        except EOFError:
+        except (EOFError, KeyboardInterrupt):
             print()
             return 0
         if not query:
