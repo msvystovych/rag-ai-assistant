@@ -7,8 +7,6 @@ Assignment specs:
 [`docs/tasks/Домашнє завдання №1 — Підготовка knowl`](docs/tasks/Домашнє%20завдання%20№1%20—%20Підготовка%20knowl) ·
 [`docs/tasks/Домашнє завдання №2 — Базовий semantic retrieval layer`](docs/tasks/Домашнє%20завдання%20№2%20—%20Базовий%20semantic%20retrieval%20layer)
 
-The full pipeline runs end to end:
-
 ```
 data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py → Chroma index
                                                                                   ↓
@@ -18,64 +16,40 @@ data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py 
 ## Subject area
 
 A chatbot that answers freight-exchange / logistics-platform engineering questions: domain concepts
-(loads, carriers, matching), architecture (CQRS + Event Sourcing, Kafka telemetry streaming), a
-monolith-to-microservices migration case study, and operating a platform at 5,000 requests per
-second.
-
-Inspired by experience building a live digital logistics platform serving 8,500+ logistics service
-providers across Europe. All documents are written from general logistics-engineering knowledge —
-no proprietary material; the migration case study is a generic composite of standard strangler-fig
-practice, and says so in its own opening paragraph.
+(loads, carriers, matching), architecture (CQRS + Event Sourcing), a monolith-to-microservices
+migration case study, and operating a platform at 5,000 requests per second. All documents are
+self-authored from general logistics-engineering knowledge — no proprietary material.
 
 ## Sources
 
-Four self-authored Markdown documents in `data/raw/`, all in English — one per `document_type`.
+Four self-authored Markdown documents in `data/raw/`, one per `document_type`.
 
-| File | Type | Words | Chunks | Covers |
-|---|---|---|---|---|
-| `freight-exchange-domain-primer.md` | concept-guide | 1,604 | 18 | actors, load lifecycle, matching, vetting, vocabulary |
-| `cqrs-event-sourcing-for-logistics.md` | architecture-guide | 1,670 | 18 | CQRS / ES for freight, events, projections |
-| `monolith-to-microservices-migration.md` | case-study | 1,834 | 23 | strangler-fig, zero-downtime sync, decommissioning |
-| `scaling-and-zero-downtime-operations.md` | playbook | 1,491 | 18 | load profile, caching, deploys, resilience, observability |
-| **Total** | | **6,599** | **77** | |
-
-Word counts are `wc -w` on each file.
+| File | Type | Words | Chunks |
+|---|---|---|---|
+| `freight-exchange-domain-primer.md` | concept-guide | 1,604 | 18 |
+| `cqrs-event-sourcing-for-logistics.md` | architecture-guide | 1,670 | 18 |
+| `monolith-to-microservices-migration.md` | case-study | 1,834 | 23 |
+| `scaling-and-zero-downtime-operations.md` | playbook | 1,491 | 18 |
+| **Total** | | **6,599** | **77** |
 
 ## Metadata structure
 
 Each JSONL line carries top-level `chunk_id` and `text`, plus a `metadata` object with
 `document_id`, `source_file`, `source_type`, `title`, `section`, `chunk_index` (1-based),
-`language` (`"en"`), `domain` (`"logistics-engineering"`), and `document_type`.
-
-`chunk_id = <document_id>_chunk_<index:03d>`; `document_id` is the normalized filename stem.
-
-**All required spec fields are present** — `chunk_id` and `text` at the top level; `document_id`,
-`source_file`, and `chunk_index` nested under `metadata`, exactly as in the homework's own sample
-chunk. The machine-readable contract is
-[`docs/homework1/assets/chunk.schema.json`](docs/homework1/assets/chunk.schema.json), and every one
-of the 77 committed lines validates against it.
+`language`, `domain`, and `document_type`. `chunk_id = <document_id>_chunk_<index:03d>`.
+All 77 lines validate against
+[`docs/homework1/assets/chunk.schema.json`](docs/homework1/assets/chunk.schema.json).
 
 ## Chunking strategy
 
-- **Method:** header-aware section splitting on ATX headings, with a recursive
-  paragraph → line → sentence → word-boundary fallback inside long sections (never mid-word).
-  Stdlib-only implementation.
-- **Parameters:** `chunk_size` 800 characters (measured on the chunk body), `overlap` 150
-  characters, `min_chunk` 500. Every emitted chunk's `text` is capped at **1000 characters
-  including the breadcrumb prefix**.
-- **Short chunks are merged** by a single rule: any chunk body under 500 characters is merged
-  **backward** into the chunk before it, while the result — breadcrumb included — stays within 1000
-  characters. A document's first chunk has no predecessor, so it is never merged. See Conclusions
-  for what this rule actually achieved on the real corpus, which is not what the design predicted.
-- Each chunk's text is prefixed with `"Document Title > Section. "` so it reads standalone.
-
-  > **Note for automated grading:** overlap applies between consecutive chunks *within a section
-  > only*. Heading boundaries reset the window by design, so first-of-section pairs, cross-heading
-  > pairs, and merge-produced pairs legitimately carry zero overlap. A per-pair overlap check must
-  > compare same-section neighbours only. Measured: of **52** same-section consecutive pairs,
-  > **48** carry a 100–200 character overlap and **4** carry less (34–91). The four are not a bug:
-  > the carry is capped at `chunk_size − len(next atom)` so a piece can never exceed 800, so when
-  > the following paragraph is itself close to 800 characters there is little budget left to carry.
+- Header-aware section splitting, with a paragraph → line → sentence → word-boundary fallback
+  inside long sections (never mid-word). Stdlib-only.
+- `chunk_size` 800 characters, `overlap` 150, `min_chunk` 500; every chunk is capped at
+  1000 characters including the `"Document Title > Section. "` breadcrumb prefix it carries.
+- Chunks under 500 characters are merged backward into their predecessor when the result fits
+  the cap.
+- Overlap applies between consecutive chunks *within a section only*; heading boundaries reset
+  the window by design.
 
 ## How to run
 
@@ -107,10 +81,10 @@ Python 3.14.6. `notebooks/retrieval.ipynb` is the same pipeline interactively �
 
 ## Example chunks
 
-Four real lines from `data/processed/chunks.jsonl`, reformatted for readability (each is one line in
-the file).
+Three real lines from `data/processed/chunks.jsonl`, reformatted for readability.
 
-**1 — a document's opening chunk. Stands alone with no prior context.**
+**1 — a document's opening chunk: stands alone and opens on a complete definition; the breadcrumb
+makes every retrieval hit self-locating.**
 
 ```json
 {"chunk_id": "freight_exchange_domain_primer_chunk_001",
@@ -118,11 +92,8 @@ the file).
  "metadata": {"document_id": "freight_exchange_domain_primer", "source_file": "data/raw/freight-exchange-domain-primer.md", "source_type": "markdown", "title": "Freight Exchange Fundamentals: Actors, Loads, and Matching", "section": "What A Freight Exchange Is", "chunk_index": 1, "language": "en", "domain": "logistics-engineering", "document_type": "concept-guide"}}
 ```
 
-*Why it is a good chunk:* 743 characters, opens on a complete definition, and answers "what is a
-freight exchange" without needing any neighbouring chunk. The breadcrumb names both the document and
-the section, so a retrieval hit is self-locating.
-
-**2 — one topic, end to end.**
+**2 — one topic end to end: defines its term ("projection") before using it, which is what makes
+it embed well.**
 
 ```json
 {"chunk_id": "cqrs_event_sourcing_for_logistics_chunk_013",
@@ -130,33 +101,14 @@ the section, so a retrieval hit is self-locating.
  "metadata": {"document_id": "cqrs_event_sourcing_for_logistics", "section": "Projections And Read Models", "chunk_index": 13, "document_type": "architecture-guide", "…": "…"}}
 ```
 
-*Why it is a good chunk:* 842 characters covering exactly one concept — what a projection is, plus
-three concrete examples. It defines its term before using it, which is what makes it embed well.
-
-**3 — the case study's framing chunk.**
-
-```json
-{"chunk_id": "monolith_to_microservices_migration_chunk_001",
- "text": "Migrating a Logistics Monolith to Microservices > Introduction. This narrative is a generic composite of standard strangler-fig practice as it is applied to freight and logistics platforms. It is not a report on any specific company, team, or system. …",
- "metadata": {"document_id": "monolith_to_microservices_migration", "section": "Introduction", "chunk_index": 1, "document_type": "case-study", "…": "…"}}
-```
-
-*Why it is a good chunk:* 855 characters, and the one chunk that had to be authored at ≥500
-characters by hand — a document's first piece is the only piece the backward-merge rule can never
-rescue. It also carries the sanitization framing, so the disclaimer travels with the content
-wherever it is retrieved.
-
-**4 — a chunk that answers a "how do I" question directly.**
+**3 — answers a "how do I" question directly: top-1 for query `q06` even though the query shares
+almost no vocabulary with it.**
 
 ```json
 {"chunk_id": "scaling_and_zero_downtime_operations_chunk_010",
  "text": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. Zero-downtime deployment is usually attributed to the rollout mechanism, but the mechanism is the smaller half. Rolling updates replace instances gradually and are the cheapest option; blue-green and canary rollouts hold a full second environment or a small traffic slice … What actually makes any of them safe is that consecutive versions can run side by side. …",
  "metadata": {"document_id": "scaling_and_zero_downtime_operations", "section": "Zero-Downtime Deployments", "chunk_index": 10, "document_type": "playbook", "…": "…"}}
 ```
-
-*Why it is a good chunk:* 778 characters that state a claim, correct a common misconception, and
-give the consequence. It is the top-1 result for query `q06` ("release new code without users
-noticing any interruption") even though the query shares almost no vocabulary with it.
 
 ---
 
@@ -166,19 +118,17 @@ noticing any interruption") even though the query shares almost no vocabulary wi
 
 Each rubric row of the assignment (§ 4) maps to committed evidence and a copy-paste check.
 Everything except V2's live query runs **offline — no API key required**. Run from the repo root
-with the dependencies installed (`pip install -r requirements.txt`).
+with the dependencies installed. All § 3 deliverables are tracked in git: `scripts/retrieval.py` +
+`notebooks/retrieval.ipynb` · `index/chroma/` (Chroma is a spec-listed alternative to FAISS) ·
+`outputs/retrieval_examples.md` · this README.
 
 | Rubric criterion (§ 4) | Pts | Evidence | Check |
 |---|---|---|---|
-| Embeddings created & stored — index exists, model named | 10 | [`index/chroma/manifest.json`](index/chroma/manifest.json): `text-embedding-3-small`, 77 vectors — one per line of `chunks.jsonl`, input pinned by SHA-256 | V1 |
-| Top-k semantic search — script runs, returns `chunk_id` + `score` | 15 | [`scripts/retrieval.py`](scripts/retrieval.py) · [`notebooks/retrieval.ipynb`](notebooks/retrieval.ipynb) (same pipeline, imports `rag_lib`) | V2 |
-| Minimum 5 queries tested, results recorded | 10 | [`outputs/retrieval_examples.md`](outputs/retrieval_examples.md): **10** queries, each `Query` / `Top-1..3` / `Comment`; raw scores in [`outputs/retrieval_results.json`](outputs/retrieval_results.json) | V3 |
-| Metadata present in results | 5 | a `Source:` line on all 30 recorded hits; `source_file` + `document_id` per hit in the JSON | V4 |
-| Conclusion — where retrieval works, where it fails | 10 | [Conclusions — Homework #2](#conclusions--homework-2) · [`docs/homework2/analysis.md`](docs/homework2/analysis.md); every headline number recomputes from the committed JSON | V5 |
-
-§ 3 deliverables, all tracked in git: `scripts/retrieval.py` + `notebooks/retrieval.ipynb` ·
-`index/chroma/` (Chroma is a spec-listed alternative to FAISS) · `outputs/retrieval_examples.md` ·
-this README.
+| Embeddings created & stored — index exists, model named | 10 | [`index/chroma/manifest.json`](index/chroma/manifest.json): `text-embedding-3-small`, 77 vectors — one per line of `chunks.jsonl` | V1 |
+| Top-k semantic search — script runs, returns `chunk_id` + `score` | 15 | [`scripts/retrieval.py`](scripts/retrieval.py) · [`notebooks/retrieval.ipynb`](notebooks/retrieval.ipynb) | V2 |
+| Minimum 5 queries tested, results recorded | 10 | [`outputs/retrieval_examples.md`](outputs/retrieval_examples.md): **10** queries, each `Query` / `Top-1..3` / `Comment` | V3 |
+| Metadata present in results | 5 | a `Source:` line on all 30 recorded hits; `source_file` + `document_id` per hit in [`outputs/retrieval_results.json`](outputs/retrieval_results.json) | V4 |
+| Conclusion — where retrieval works, where it fails | 10 | [Conclusions — Homework #2](#conclusions--homework-2) · [`docs/homework2/analysis.md`](docs/homework2/analysis.md) | V5 |
 
 ```bash
 # V1 — index exists, model recorded, exactly one vector per chunk (offline).
@@ -200,7 +150,6 @@ grep -c "^Comment: " outputs/retrieval_examples.md                              
 # V4 — metadata on every recorded hit (offline).
 grep -c "  Source: data/raw/" outputs/retrieval_examples.md                          # 30
 grep -c '"source_file"' outputs/retrieval_results.json                               # 30
-grep -c '"document_id"' outputs/retrieval_results.json                               # 30
 
 # V5 — the conclusions' headline numbers reproduce from the committed results (offline).
 python -c "import json; r = json.load(open('outputs/retrieval_results.json'))['records']; \
@@ -223,15 +172,14 @@ content; `git checkout -- index/` restores a clean tree afterwards.
 |---|---|
 | **Embedding model** | OpenAI `text-embedding-3-small`, 1,536 dimensions |
 | **What is embedded** | each chunk's full `text`, breadcrumb prefix included |
-| **Query encoding** | the **same** model — enforced, not assumed (see below) |
+| **Query encoding** | the **same** model — enforced, not assumed |
 | **Vector store** | Chroma `PersistentClient`, `index/chroma/`, HNSW, cosine space |
 | **Vectors indexed** | 77 — equal to the line count of `chunks.jsonl` |
 | **Score** | `1 - cosine_distance`, so 1.000 is identical and 0.000 orthogonal |
 
-`index/chroma/manifest.json` records the model, dimension, chunk count, collection name and a
-SHA-256 of the input file. `retrieval.py` reads it before every search and **refuses to run** if the
-index was built with a different embedding model than the one configured — a mismatched index is a
-hard error rather than a silently wrong answer.
+`index/chroma/manifest.json` records the model, dimension, chunk count and a SHA-256 of the input
+file; `retrieval.py` reads it before every search and **refuses to run** against an index built
+with a different model or from a since-edited `chunks.jsonl`.
 
 ## Retrieval
 
@@ -261,96 +209,58 @@ per-query relevance comments in
 | cross-document | 3 | 0.577 | answers spanning more than one document |
 | out-of-corpus | 1 | 0.266 | a question the corpus cannot answer |
 
-**Top-1 hit rate on the nine in-corpus queries: 9/9.** Every one put an expected document at rank 1,
-including all three paraphrases.
+**Top-1 hit rate on the nine in-corpus queries: 9/9**, including all three paraphrases.
 
 ## Conclusions — Homework #2
 
 **Where retrieval works well.** Semantic matching genuinely works: `q06` asks how to "release new
-code without users noticing any interruption" and never says *deployment*, *rolling*, or
-*blue-green*, yet all three hits are the Zero-Downtime Deployments section. A keyword index could
-not do that. Results also cluster tightly — across the nine in-corpus queries a top-3 spans 2.00
-distinct sections and 1.33 distinct documents on average, so hits concentrate where the answer is.
+code without users noticing any interruption", never uses the corpus's vocabulary, and still gets
+the Zero-Downtime Deployments section for all three hits. Results cluster tightly — a top-3 spans
+2.00 distinct sections and 1.33 distinct documents on average.
 
 **Where it breaks down.**
 
-1. **Paraphrasing costs 30% of the similarity score** — 0.601 mean top-1 for direct queries against
-   0.423 for paraphrases. Ranking survives; the margin does not. On a bigger or noisier corpus that
-   is where the first errors would appear.
-2. **There is no "I don't know."** The out-of-corpus query still returns three confidently formatted
-   results. Only the score betrays it — 0.266 against an in-corpus floor of 0.413 — and **no
-   threshold is enforced anywhere in the code**. A floor near 0.35 is the obvious next control, and
-   it is required before these chunks are ever fed to an LLM.
-3. **One high score is lexical, not semantic.** `q08` contains the exact phrase "5,000 requests per
-   second", which the breadcrumb prepends to *every* chunk of that document via its H1. Part of that
-   0.646 is keyword overlap wearing a semantic score's clothing.
-4. **Chunks that open mid-sentence rank well and read badly** — an artifact of the overlap carry,
-   visible in `q01` and `q09`.
+1. **Paraphrasing costs 30% of the similarity score** (0.601 direct vs 0.423 paraphrase). Ranking
+   survives; the margin does not.
+2. **There is no "I don't know."** The out-of-corpus query still returns three confidently
+   formatted results; only the score betrays it (0.266 vs an in-corpus floor of 0.413), and no
+   threshold is enforced. A floor near 0.35 is the obvious next control.
+3. **One high score is partly lexical:** `q08` repeats a phrase the breadcrumb prepends to every
+   chunk of one document, so keyword overlap inflates a semantic-looking score.
+4. **Chunks that open mid-sentence rank well and read badly** — an artifact of the overlap carry.
 
-**Chunk-size experiment** ([`outputs/chunk_size_experiment.md`](outputs/chunk_size_experiment.md)),
-closing risk #7 in `docs/homework1/reflection.md`, which deferred chunk-size tuning to this
-homework. Re-chunking at 500/100 gives 116 chunks and *raises* mean top-1 slightly (0.546 vs 0.534)
-— but top-1 hit rate falls from **100% to 89%**, and the separation margin against the out-of-corpus
-query collapses from **0.147 to 0.101**. Smaller chunks buy sharper peaks and pay in discrimination.
-**800/150 is retained**, now on evidence rather than on a best-practice guess.
+**Chunk-size experiment** ([`outputs/chunk_size_experiment.md`](outputs/chunk_size_experiment.md)):
+re-chunking at 500/100 slightly raises mean top-1 but drops the hit rate from 100% to 89% and
+narrows the out-of-corpus separation margin from 0.147 to 0.101. **800/150 is retained**, on
+evidence rather than a best-practice guess.
 
-**Honest limitations.** The corpus and the queries share an author, which makes retrieval easier
-than it would be in the wild; the paraphrase category exists to push against exactly that, and the
-30% score drop is the size of the effect. Ten queries over 77 chunks is an anecdote, not a
-benchmark — no recall@k or nDCG is reported, because with one relevant document per query those
-metrics would dress up the same ten observations in statistics they cannot support.
-
-Full analysis: [`docs/homework2/analysis.md`](docs/homework2/analysis.md).
+**Limitations.** The corpus and the queries share an author, which makes retrieval easier than in
+the wild; ten queries over 77 chunks is an anecdote, not a benchmark. Full analysis:
+[`docs/homework2/analysis.md`](docs/homework2/analysis.md).
 
 ## Conclusions — Homework #1 chunk quality
 
-Measured on the committed run: 4 documents → **77 chunks**, `text` length min 390 / mean 707 / max
-930, and **70 of 77 (90.9%)** inside the 500–1000 band. Every figure below is printed by
-`scripts/prepare_knowledge_base.py` itself, so it can be reproduced with one command.
+Measured on the committed run: 4 documents → **77 chunks**, `text` length min 390 / mean 707 /
+max 930, **90.9%** inside the 500–1000 band. All figures are printed by
+`scripts/prepare_knowledge_base.py` itself.
 
 **What worked well:**
 
-- **The breadcrumb prefix does its job.** Reading five chunks at random, every one was
-  understandable in isolation — the `"Document Title > Section. "` prefix means a retrieved fragment
-  always names its own context. It costs a mean of 79 characters per chunk, which is the price of
-  the 92.2% band figure above, and it is worth it.
-- **Overlap behaves as specified for 48 of 52 same-section pairs**; the other 4 carry 34–91
-  characters because the carry is capped so a piece can never exceed `chunk_size`. Zero-overlap
-  pairs occur only across headings, as designed.
-- **No chunk is truncated mid-word, and none exceeds the 1000-character ceiling.** Reruns on
-  unchanged input are byte-identical, so re-chunking is a safe one-command experiment — which is
-  what made the Homework #2 chunk-size comparison cheap to run.
-- **Zero chunks under 250 characters**, which was the design's actual goal.
+- The breadcrumb prefix makes every chunk understandable in isolation, at a mean cost of
+  79 characters per chunk.
+- Overlap behaves as specified for 48 of 52 same-section pairs; the other 4 carry less because the
+  carry is capped so a piece can never exceed `chunk_size` — by design, not a bug.
+- No chunk is truncated mid-word, none exceeds the 1000-character ceiling, none is under
+  250 characters, and reruns on unchanged input are byte-identical.
 
 **What to improve:**
 
-- **The `merge_short` rule is nearly inert at these parameters, and the design did not predict
-  that.** `pipeline-spec.md` § D1 argues the rule at length and its simulation projected 8.5%
-  sub-500 bodies against 14.6% without merging. Reality: **16.9% (13 of 77)**. The script reports
-  the rule's own tally: **14 candidates, 1 merged, 13 refused by the ≤1000-character cap.** The
-  cause is arithmetic the simulation missed — the cap is `1000 − longest breadcrumb` ≈ 900, and a
-  predecessor packed to ~800 characters leaves only ~110 characters of headroom, so almost every
-  undersized tail is too big to absorb. The 500/100 variant is the control that proves it: with a
-  ~500-character predecessor there *is* headroom, and there the same rule fires **17 times out of
-  17 candidates, refusing none**. At `chunk_size` 800 the rule cannot fire on the case it was
-  written for. Either lower `chunk_size` to ~650 to create headroom, or drop the rule and its ~15
-  lines. This is the clearest gap between the plan and the outcome, and only a real run showed it.
-- **Overlap should snap to a sentence boundary.** The carry currently snaps to a word boundary, so
-  chunks routinely open mid-sentence ("time and handling risk. That distinction…"). Ranking is
-  unaffected — the embedding sees the whole chunk — but it reads badly and it hurt the readability
-  of `q01`'s and `q09`'s top hit. This is `reflection.md` risk #3, now confirmed on real output.
-- **Prose-only authoring paid off.** No section chunked badly, because the corpus contains no tables
-  and no long lists. That was a deliberate constraint, and the absence of a problem here is the
-  evidence it was the right one.
-- **Every section was long enough to split** — 25 of 25 exceeded 800 characters, so no section
-  fitted in a single chunk. Sections of 1,300–1,800 characters produce 2–3 chunks each and a tail;
-  aiming at ~1,600 (a clean 2× the target) would waste less.
-- **Which document chunked worst:** `scaling-and-zero-downtime-operations.md` — 4 residuals out of
-  18 chunks (22.2%), against 17.4% for the migration case study (4 of 23), 16.7% for the primer
-  (3 of 18) and 11.1% for the CQRS guide (2 of 18). It is the shortest document (1,491 words) with
-  the same six-section structure as the others, so its sections sit closest to the awkward
-  ~900–1,300 character band that yields one full 800-character piece plus a short tail. Section
-  length, not subject matter, drives residuals.
+- **The backward-merge rule is nearly inert at 800/150** — 14 candidates, 1 merged, 13 refused by
+  the 1000-character cap, because a predecessor packed to ~800 characters leaves no headroom.
+  Either lower `chunk_size` to ~650 or drop the rule.
+- **Overlap should snap to a sentence boundary** — chunks routinely open mid-sentence, which reads
+  badly in retrieval output even though ranking is unaffected.
+- Sections of ~1,600 characters (a clean 2× the target) would split with less waste.
 
 ---
 
