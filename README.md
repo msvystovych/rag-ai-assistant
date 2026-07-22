@@ -162,6 +162,61 @@ noticing any interruption") even though the query shares almost no vocabulary wi
 
 # Homework #2 — semantic retrieval layer
 
+## How to verify this homework (grading checklist)
+
+Each rubric row of the assignment (§ 4) maps to committed evidence and a copy-paste check.
+Everything except V2's live query runs **offline — no API key required**. Run from the repo root
+with the dependencies installed (`pip install -r requirements.txt`).
+
+| Rubric criterion (§ 4) | Pts | Evidence | Check |
+|---|---|---|---|
+| Embeddings created & stored — index exists, model named | 10 | [`index/chroma/manifest.json`](index/chroma/manifest.json): `text-embedding-3-small`, 77 vectors — one per line of `chunks.jsonl`, input pinned by SHA-256 | V1 |
+| Top-k semantic search — script runs, returns `chunk_id` + `score` | 15 | [`scripts/retrieval.py`](scripts/retrieval.py) · [`notebooks/retrieval.ipynb`](notebooks/retrieval.ipynb) (same pipeline, imports `rag_lib`) | V2 |
+| Minimum 5 queries tested, results recorded | 10 | [`outputs/retrieval_examples.md`](outputs/retrieval_examples.md): **10** queries, each `Query` / `Top-1..3` / `Comment`; raw scores in [`outputs/retrieval_results.json`](outputs/retrieval_results.json) | V3 |
+| Metadata present in results | 5 | a `Source:` line on all 30 recorded hits; `source_file` + `document_id` per hit in the JSON | V4 |
+| Conclusion — where retrieval works, where it fails | 10 | [Conclusions — Homework #2](#conclusions--homework-2) · [`docs/homework2/analysis.md`](docs/homework2/analysis.md); every headline number recomputes from the committed JSON | V5 |
+
+§ 3 deliverables, all tracked in git: `scripts/retrieval.py` + `notebooks/retrieval.ipynb` ·
+`index/chroma/` (Chroma is a spec-listed alternative to FAISS) · `outputs/retrieval_examples.md` ·
+this README.
+
+```bash
+# V1 — index exists, model recorded, exactly one vector per chunk (offline).
+python -c "import json, chromadb; from chromadb.config import Settings as S; \
+m = json.load(open('index/chroma/manifest.json')); \
+c = chromadb.PersistentClient(path='index/chroma', settings=S(anonymized_telemetry=False)).get_collection(m['collection']); \
+n = sum(1 for l in open('data/processed/chunks.jsonl', encoding='utf-8') if l.strip()); \
+print('model:', m['embedding_model'], '| vectors:', c.count(), '| chunks:', n); \
+assert m['chunk_count'] == c.count() == n"
+
+# V2 — the search script runs end to end (needs OPENAI_API_KEY; one embedding call).
+python scripts/retrieval.py --query "How does load matching work?" --k 3
+
+# V3 — 10 queries, each with Top-1..3 and a relevance comment (offline).
+grep -c "^Query: " outputs/retrieval_examples.md                                     # 10
+grep -cE "^Top-[123]: [a-z0-9_]+ \| score: 0\.[0-9]+" outputs/retrieval_examples.md  # 30
+grep -c "^Comment: " outputs/retrieval_examples.md                                   # 10
+
+# V4 — metadata on every recorded hit (offline).
+grep -c "  Source: data/raw/" outputs/retrieval_examples.md                          # 30
+grep -c '"source_file"' outputs/retrieval_results.json                               # 30
+grep -c '"document_id"' outputs/retrieval_results.json                               # 30
+
+# V5 — the conclusions' headline numbers reproduce from the committed results (offline).
+python -c "import json; r = json.load(open('outputs/retrieval_results.json'))['records']; \
+top = lambda cat: [x['hits'][0]['score'] for x in r if x['category'] == cat]; \
+ic = [x['hits'][0]['score'] for x in r if x['category'] != 'out-of-corpus']; \
+print('direct', round(sum(top('direct'))/3, 3), '| paraphrase', round(sum(top('paraphrase'))/3, 3), \
+'| in-corpus floor', round(min(ic), 3), '| out-of-corpus', round(top('out-of-corpus')[0], 3))"
+#   direct 0.601 | paraphrase 0.423 | in-corpus floor 0.413 | out-of-corpus 0.266
+
+# The full test suite — 74 tests, offline, no key or network.
+python -m pytest -q
+```
+
+Opening the Chroma index (V1, V2) may touch its binary bookkeeping files without changing any
+content; `git checkout -- index/` restores a clean tree afterwards.
+
 ## Embeddings and vector storage
 
 | | |
@@ -319,7 +374,7 @@ Measured on the committed run: 4 documents → **77 chunks**, `text` length min 
 │   └── chunk_size_experiment.py  800/150 vs 500/100 comparison
 ├── notebooks/retrieval.ipynb     the same pipeline, interactively
 ├── outputs/                      retrieval examples + experiment results
-├── tests/                        47 tests; no API key or network required
+├── tests/                        74 tests; no API key or network required
 └── docs/homework1|homework2|tasks
 ```
 
