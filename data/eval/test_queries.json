@@ -1,5 +1,6 @@
 {
-  "description": "Evaluation queries for the Homework #2 retrieval layer. `category` records why each query is in the set; `expected_documents` is the document_id(s) a good retriever should surface, used for a mechanical hit/miss verdict. `comment` is authored by hand AFTER inspecting a real run — it is the graded relevance judgement and must never be a placeholder.",
+  "description": "Evaluation queries for the Homework #2 retrieval layer. `category` records why each query is in the set; `expected_documents` is the document_id(s) a good retriever should surface, used for a mechanical hit/miss verdict. `comment` is authored by hand AFTER inspecting a real run — it is the graded relevance judgement and must never be a placeholder. Homework #3 adds `hw3_comment` (the per-query baseline-vs-improved judgement rendered into outputs/retrieval_comparison.md) and the top-level `hw3_conclusion` — both follow the same authored-after-a-real-run rule.",
+  "hw3_conclusion": "Metadata filtering delivered the reliability gain and hybrid search delivered the precision gain; the combination is strictly better than either alone. Filter-only lifted top-3 expected-document precision from 0.889 to 0.926 by evicting foreign-document chunks (q09's CQRS leak disappears) while never changing a correct result — the conservative zero-or-tie → unfiltered rule means it cannot misfire on ambiguous queries. Hybrid-only produced the single largest per-query win — q05, where inference stays unfiltered and BM25's lexical match on the ledger/immutable-events vocabulary promoted two genuinely better chunks — but on its own it also REGRESSED q09 (a foreign CQRS chunk reached top-1 on the word 'event') and leaked a migration chunk into q06's top-3, dropping the top-1 hit rate to 0.89. Combined, the filter constrains exactly that leakage while hybrid re-ranks within the filtered set: top-3 precision 0.963 with the top-1 hit rate back at 1.00. So the biggest effect comes from metadata filtering — it both adds precision and removes hybrid's failure mode — while the biggest single-query improvement comes from BM25 on the one query filtering cannot touch. Two honest caveats: with four document types mapping 1:1 to four documents, a correct filter is equivalent to selecting the right document, so its measured effect is an upper bound a larger corpus would not reproduce as strongly; and q08 shows the breadcrumb title-token boost reordering hits within the right document to a slightly worse top-1 — hybrid is a net win in aggregate, not uniformly per query.",
   "queries": [
     {
       "id": "q01",
@@ -8,7 +9,8 @@
       "expected_documents": [
         "freight_exchange_domain_primer"
       ],
-      "comment": "Relevant. All three hits are from the right document and the Key Domain Vocabulary section does define backhaul. But top-1 opens mid-sentence (\"time and handling risk...\") because it carries an overlap tail, so the definition a reader wants is actually in top-3. Right section, imprecise chunk."
+      "comment": "Relevant. All three hits are from the right document and the Key Domain Vocabulary section does define backhaul. But top-1 opens mid-sentence (\"time and handling risk...\") because it carries an overlap tail, so the definition a reader wants is actually in top-3. Right section, imprecise chunk.",
+      "hw3_comment": "No change at top-1 — the direct query was already resolved correctly, and the filter (concept-guide, correctly inferred) had nothing to evict from an all-primer top-3. Hybrid only reshuffled rank 3 within the same document. The improved pipeline's job here was to not break an easy case, and it didn't."
     },
     {
       "id": "q02",
@@ -17,7 +19,8 @@
       "expected_documents": [
         "cqrs_event_sourcing_for_logistics"
       ],
-      "comment": "Relevant. Top-1 and top-2 tie at 0.582 and both come from Why CQRS Fits Freight; top-2 is the better answer because it opens with the definition, so the ordering between two near-identical scores is effectively arbitrary. Top-3 is a reasonable continuation."
+      "comment": "Relevant. Top-1 and top-2 tie at 0.582 and both come from Why CQRS Fits Freight; top-2 is the better answer because it opens with the definition, so the ordering between two near-identical scores is effectively arbitrary. Top-3 is a reasonable continuation.",
+      "hw3_comment": "Top-1 and top-2 unchanged (filter correctly inferred architecture-guide; all hits were already CQRS chunks). BM25 agreed with the semantic top-1 (#1 in both rankings), which resolves HW2's observation that the 0.582 tie made the order arbitrary — the lexical branch now breaks that tie deliberately rather than by chance. Rank 3 swapped to the Operational Realities chunk on keyword strength; lateral, same document."
     },
     {
       "id": "q03",
@@ -26,7 +29,8 @@
       "expected_documents": [
         "monolith_to_microservices_migration"
       ],
-      "comment": "Highly relevant — the best result in the set. Top-1 (0.685) opens with the definition itself and all three hits are the Strangler-Fig Execution section in reading order. A direct query whose vocabulary matches the corpus is the easy case, and it behaves like one."
+      "comment": "Highly relevant — the best result in the set. Top-1 (0.685) opens with the definition itself and all three hits are the Strangler-Fig Execution section in reading order. A direct query whose vocabulary matches the corpus is the easy case, and it behaves like one.",
+      "hw3_comment": "Unchanged at top-1 and top-2 — the strongest baseline result stays the strongest improved result (semantic #1 = BM25 #1). Rank 3 swapped to the document's introduction chunk via BM25's liking for title tokens; marginally less useful than the baseline's in-order continuation, but the same document and a reasonable entry point."
     },
     {
       "id": "q04",
@@ -35,7 +39,8 @@
       "expected_documents": [
         "freight_exchange_domain_primer"
       ],
-      "comment": "Partially relevant. The paraphrase deliberately avoids the word 'backhaul' and the retriever still finds the right document, but no retrieved chunk leads with the backhaul definition, and the score falls to 0.413 from 0.536 for the same concept asked directly (q01). This is the vocabulary-mismatch penalty made visible."
+      "comment": "Partially relevant. The paraphrase deliberately avoids the word 'backhaul' and the retriever still finds the right document, but no retrieved chunk leads with the backhaul definition, and the score falls to 0.413 from 0.536 for the same concept asked directly (q01). This is the vocabulary-mismatch penalty made visible.",
+      "hw3_comment": "Top-1 unchanged. The filter (concept-guide, inferred from 'trucks'/'delivery') was already satisfied, and hybrid reshuffled ranks 2–3 within the right document. The HW2 finding stands mostly unrepaired: when a paraphrase avoids the corpus vocabulary, BM25 has as little to grip as the embedding does — hybrid search helps lexical matches, and this query deliberately offers none."
     },
     {
       "id": "q05",
@@ -44,7 +49,8 @@
       "expected_documents": [
         "cqrs_event_sourcing_for_logistics"
       ],
-      "comment": "Partially relevant. Top-1 is the correct document and genuinely about immutable events, but top-2 and top-3 leak into the migration and scaling documents — the paraphrase 'permanent record instead of updating a row' matches generic write-path language across the whole corpus. The only query whose top-3 spans three documents."
+      "comment": "Partially relevant. Top-1 is the correct document and genuinely about immutable events, but top-2 and top-3 leak into the migration and scaling documents — the paraphrase 'permanent record instead of updating a row' matches generic write-path language across the whole corpus. The only query whose top-3 spans three documents.",
+      "hw3_comment": "The flagship hybrid win, on exactly the query the filter cannot help (inference correctly returns none — the vocabulary is ambiguous). BM25 promoted Event Sourcing Basics ('never deleted. A correction is expressed as a further event, in the way a ledger is corrected by a reversing entry') and Projections And Read Models from semantic ranks 4–5 into the top-2 — both better answers than the baseline's top-1. The three-document leak shrinks to one foreign chunk at rank 3; top-3 precision goes from 1/3 to 2/3."
     },
     {
       "id": "q06",
@@ -53,7 +59,8 @@
       "expected_documents": [
         "scaling_and_zero_downtime_operations"
       ],
-      "comment": "Relevant. Despite the lowest-band score (0.431), all three hits are the Zero-Downtime Deployments section and top-1 opens on exactly the right sentence. Score magnitude and usefulness are not the same thing — a low absolute score with tight section clustering is a good result."
+      "comment": "Relevant. Despite the lowest-band score (0.431), all three hits are the Zero-Downtime Deployments section and top-1 opens on exactly the right sentence. Score magnitude and usefulness are not the same thing — a low absolute score with tight section clustering is a good result.",
+      "hw3_comment": "The two Zero-Downtime Deployments chunks swapped places (BM25 prefers the additive-API-changes chunk; the semantic branch still ranks the rollout-mechanism chunk first) — a lateral move within the right section. The filter earned its keep at rank 3: hybrid-only leaked a migration chunk into the top-3 on shared deployment vocabulary, and the playbook filter kept the result all-playbook. Without the filter this query would have LOST precision to hybrid."
     },
     {
       "id": "q07",
@@ -63,7 +70,8 @@
         "monolith_to_microservices_migration",
         "cqrs_event_sourcing_for_logistics"
       ],
-      "comment": "Highly relevant. All three hits are the Keeping Data In Sync Mid-Migration section, covering dual-write, read switch, and duplicate handling. The question spans two documents conceptually, but the migration document answers it completely, so a single-document result is correct rather than narrow."
+      "comment": "Highly relevant. All three hits are the Keeping Data In Sync Mid-Migration section, covering dual-write, read switch, and duplicate handling. The question spans two documents conceptually, but the migration document answers it completely, so a single-document result is correct rather than narrow.",
+      "hw3_comment": "Top-1 moved to the chunk that opens on the dual-write premise ('both the monolith and a new service hold data for the same context, and both must be correct') — a better lead than the baseline's mid-section chunk. The case-study filter formally excludes the second expected document (CQRS), but the baseline never surfaced it either and HW2 already judged the migration document a complete answer; the conservative-inference risk this query was designed to expose did not materialize as a loss."
     },
     {
       "id": "q08",
@@ -73,7 +81,8 @@
         "scaling_and_zero_downtime_operations",
         "freight_exchange_domain_primer"
       ],
-      "comment": "Relevant, but partly for the wrong reason. Top-1 directly addresses what the 5,000 requests per second figure does and does not tell you. The score (0.646) is inflated by lexical overlap: the exact phrase appears in the document title, which the breadcrumb prepends to every chunk of that document. Semantically right, but this query cannot distinguish semantic from keyword matching."
+      "comment": "Relevant, but partly for the wrong reason. Top-1 directly addresses what the 5,000 requests per second figure does and does not tell you. The score (0.646) is inflated by lexical overlap: the exact phrase appears in the document title, which the breadcrumb prepends to every chunk of that document. Semantically right, but this query cannot distinguish semantic from keyword matching.",
+      "hw3_comment": "The honest negative example. BM25 promoted the Observability chunk to top-1 over the Load Profile chunk that HW2 judged the best answer — the breadcrumb repeats '5,000 Requests per Second' in every chunk of this document, so the lexical branch amplifies exactly the title-token inflation HW2 flagged on the semantic side. Still the right document, still a hit, and the displaced chunk sits at rank 2, but qualitatively the top-1 got slightly worse. This is the design doc's breadcrumb-bias limitation showing up on schedule."
     },
     {
       "id": "q09",
@@ -82,14 +91,16 @@
       "expected_documents": [
         "freight_exchange_domain_primer"
       ],
-      "comment": "Partially relevant. Top-1 is the right section and does cover delivery confirmation triggering settlement, though it opens mid-sentence on the telematics signal rather than on proof of delivery. Top-2 drifts to CQRS Operational Realities on the strength of the word 'event'. The POD-to-settlement link is retrievable but not cleanly isolated in one chunk."
+      "comment": "Partially relevant. Top-1 is the right section and does cover delivery confirmation triggering settlement, though it opens mid-sentence on the telematics signal rather than on proof of delivery. Top-2 drifts to CQRS Operational Realities on the strength of the word 'event'. The POD-to-settlement link is retrievable but not cleanly isolated in one chunk.",
+      "hw3_comment": "The flagship filter win. Baseline rank 2 was a CQRS chunk that drifted in on the word 'event'; the concept-guide filter (inferred from 'delivery'/'confirmation') evicts it, and the improved top-3 is all-primer — including The Load Lifecycle chunk that BM25 surfaces at lexical rank 1. Top-3 precision goes from 2/3 to 3/3. Crucially, hybrid-only made this query WORSE (the CQRS chunk reached top-1), so the gain here belongs to filtering and to filtering constraining hybrid — the clearest single demonstration of why the combined pipeline needs both parts."
     },
     {
       "id": "q10",
       "category": "out-of-corpus",
       "query": "What is the best way to fine-tune a large language model on a custom dataset?",
       "expected_documents": [],
-      "comment": "Not relevant — correctly so, and this is the most useful query in the set. Nothing in a logistics corpus answers a question about fine-tuning language models, and the top score drops to 0.266, well clear of the 0.413 in-corpus floor. But the system still returns three confidently formatted results: a pure retrieval layer has no way to say 'I don't know'. A score floor near 0.35 would be needed before this feeds an LLM."
+      "comment": "Not relevant — correctly so, and this is the most useful query in the set. Nothing in a logistics corpus answers a question about fine-tuning language models, and the top score drops to 0.266, well clear of the 0.413 in-corpus floor. But the system still returns three confidently formatted results: a pure retrieval layer has no way to say 'I don't know'. A score floor near 0.35 would be needed before this feeds an LLM.",
+      "hw3_comment": "Correctly unfiltered — no inference rule matches, which is the designed behaviour: a filter would have funnelled an unanswerable question into one document and made the results look more authoritative than they are. Hybrid reshuffled which irrelevant chunks appear (BM25 latches onto 'model'-adjacent migration vocabulary), but the semantic ceiling is unchanged at 0.266, still well below the 0.413 in-corpus floor. The HW2 conclusion stands: only a score floor, out of scope here as in HW2, would let the system decline to answer."
     }
   ]
 }

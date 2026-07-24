@@ -2,15 +2,19 @@
 
 Homework #1 — preparing a knowledge base for a retrieval-augmented chatbot.
 Homework #2 — a basic semantic retrieval layer over that knowledge base.
+Homework #3 — an improved retrieval pipeline: metadata filtering + hybrid BM25/RRF search.
 
 Assignment specs:
 [`docs/tasks/Домашнє завдання №1 — Підготовка knowl`](docs/tasks/Домашнє%20завдання%20№1%20—%20Підготовка%20knowl) ·
-[`docs/tasks/Домашнє завдання №2 — Базовий semantic retrieval layer`](docs/tasks/Домашнє%20завдання%20№2%20—%20Базовий%20semantic%20retrieval%20layer)
+[`docs/tasks/Домашнє завдання №2 — Базовий semantic retrieval layer`](docs/tasks/Домашнє%20завдання%20№2%20—%20Базовий%20semantic%20retrieval%20layer) ·
+[`docs/tasks/Домашнє завдання №3 — Покращення retrieval pipeline`](docs/tasks/Домашнє%20завдання%20№3%20—%20Покращення%20retrieval%20pipeline)
 
 ```
 data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py → Chroma index
                                                                                   ↓
                     retrieved chunks ← top-k cosine search ← retrieval.py ← user query
+                                                                                  ↓
+      fused chunks ← document_type filter + BM25 ‖ semantic, RRF ← retrieval_improved.py
 ```
 
 ## Subject area
@@ -73,6 +77,10 @@ python scripts/retrieval.py --interactive
 # 5. Reproduce the evaluation and the chunk-size experiment.
 python scripts/run_test_queries.py --k 3
 python scripts/chunk_size_experiment.py --k 3
+
+# 6. Homework #3 — improved search and the baseline-vs-improved comparison.
+python scripts/retrieval_improved.py --query "How do we release code without interruption?" --k 3
+python scripts/retrieval_improved.py --compare --k 3
 ```
 
 Step 1 needs only Python ≥ 3.9. Steps 2–5 need the packages in `requirements.txt`; verified on
@@ -159,7 +167,7 @@ print('direct', round(sum(top('direct'))/3, 3), '| paraphrase', round(sum(top('p
 '| in-corpus floor', round(min(ic), 3), '| out-of-corpus', round(top('out-of-corpus')[0], 3))"
 #   direct 0.601 | paraphrase 0.423 | in-corpus floor 0.413 | out-of-corpus 0.266
 
-# The full test suite — 74 tests, offline, no key or network.
+# The full test suite — 126 tests (74 for HW1-2 + 52 for HW3), offline, no key or network.
 python -m pytest -q
 ```
 
@@ -264,6 +272,135 @@ max 930, **90.9%** inside the 500–1000 band. All figures are printed by
 
 ---
 
+# Homework #3 — improved retrieval pipeline
+
+Two additions on top of the Homework #2 layer, measured against it on the same 10 queries:
+
+1. **Metadata filtering** — a rule-based keyword map infers a `document_type` filter from the
+   query (zero matches or a tie → unfiltered); the filter narrows **both** the semantic branch
+   (Chroma `where=`) and the lexical branch. `--document-type` overrides, `--no-filter` disables.
+2. **Hybrid search** — the semantic ranking is fused with a standard-library BM25 ranking via
+   Reciprocal Rank Fusion (no new dependencies).
+
+The baseline is the committed Homework #2 result file, read-only — the compare run refuses to
+proceed on a model or k mismatch rather than compare apples to oranges. Design decisions and
+known limits: [`docs/homework3/retrieval-improvements-spec.md`](docs/homework3/retrieval-improvements-spec.md).
+
+## How to verify this homework (grading checklist)
+
+All § 3 deliverables are tracked in git: `scripts/retrieval_improved.py` ·
+`outputs/retrieval_comparison.md` · this README — plus `outputs/retrieval_results_improved.json`,
+the machine-readable backing for the comparison (the HW3 counterpart of HW2's
+`retrieval_results.json`; not §3-listed, kept because the checks below verify against it).
+Everything except V2's live query runs **offline — no API key required**.
+
+| Rubric criterion (§ 4) | Pts | Evidence | Check |
+|---|---|---|---|
+| Metadata filtering implemented — works, narrows results | 15 | [`scripts/rag_lib.py`](scripts/rag_lib.py) (`infer_document_type`, `search(..., where=)`) · per-query `Filter` lines in [`outputs/retrieval_comparison.md`](outputs/retrieval_comparison.md) | V1, V2 |
+| One improvement implemented correctly (hybrid search) | 15 | [`scripts/rag_lib.py`](scripts/rag_lib.py) (`Bm25Index`, `rrf_fuse`, `search_improved`) + offline tests | V3 |
+| Baseline vs improved comparison for 5+ queries | 10 | [`outputs/retrieval_comparison.md`](outputs/retrieval_comparison.md): **10** queries, per-query table + side-by-side detail | V4 |
+| Conclusion — what gave the biggest effect | 10 | [Conclusions — Homework #3](#conclusions--homework-3) · the Conclusion section of [`outputs/retrieval_comparison.md`](outputs/retrieval_comparison.md) | V5 |
+
+```bash
+# V1 — the filter narrows results: every hit of every filtered query comes from the document
+# of the inferred document_type (offline, checked against the committed machine-readable results;
+# FAILS loudly — non-empty mismatch list is an assertion error naming the leaked chunks).
+python -c "import json; rs = json.load(open('outputs/retrieval_results_improved.json'))['records']; \
+f = [r for r in rs if r['inferred_document_type']]; \
+mismatch = [(r['id'], h['chunk_id']) for r in f \
+for h in r['configs']['filter-only']['hits'] + r['configs']['combined']['hits'] \
+if not h['chunk_id'].startswith({'concept-guide': 'freight', 'architecture-guide': 'cqrs', \
+'case-study': 'monolith', 'playbook': 'scaling'}[r['inferred_document_type']])]; \
+assert f and not mismatch, f'cross-type leaks under filter: {mismatch}'; \
+print('filtered queries:', len(f), 'of', len(rs), '| cross-type leaks under filter: none')"
+
+# V2 — the improved search runs end to end and prints its inferred filter
+# (needs OPENAI_API_KEY; one embedding call).
+python scripts/retrieval_improved.py --query "How do we release code without interruption?" --k 3
+
+# V3 — the hybrid layer's behaviour is pinned by offline tests (no key, no network).
+python -m pytest tests/test_retrieval_improved.py -q
+
+# V4 — 10 comparison rows; the baseline top-1 column reproduces the committed HW2 top-1
+# chunk ids verbatim (offline; full-hit-array byte-identity additionally holds in
+# retrieval_results_improved.json's embedded baseline_hits).
+grep -c "^| q[0-9]" outputs/retrieval_comparison.md                                  # 10
+python -c "import json; base = {r['id']: r['hits'][0]['chunk_id'] \
+for r in json.load(open('outputs/retrieval_results.json'))['records']}; \
+imp = {r['id']: r['baseline_top1'] for r in json.load(open('outputs/retrieval_results_improved.json'))['records']}; \
+assert base == imp, 'baseline drift'; print('baseline column matches committed HW2 results: 10/10')"
+
+# V5 — the conclusions' headline numbers reproduce from the committed results (offline):
+# the full precision progression, the hybrid-only top-1 regression, and the intact combined hit rate.
+python -c "import json; a = json.load(open('outputs/retrieval_results_improved.json'))['aggregates']; \
+[print(f\"{n}: top-1 {v['top1_hit_rate']:.2f} | top-3 precision {v['top3_precision']:.3f}\") for n, v in a.items()]; \
+p = lambda n: round(a[n]['top3_precision'], 3); \
+assert (p('baseline'), p('filter-only'), p('combined')) == (0.889, 0.926, 0.963), 'precision progression drifted'; \
+assert round(a['hybrid-only']['top1_hit_rate'], 2) == 0.89, 'hybrid-only regression figure drifted'; \
+assert a['combined']['top1_hit_rate'] == 1.0 and a['baseline']['top1_hit_rate'] == 1.0"
+#   baseline 0.889 → filter-only 0.926 → combined 0.963; hybrid-only top-1 0.89 (the regression the filter prevents)
+```
+
+## Improved retrieval example
+
+```bash
+$ python scripts/retrieval_improved.py --query "How do we release code without interruption?" --k 3
+
+Query: How do we release code without interruption?
+Filter: document_type=playbook (inferred)
+
+Top-1: scaling_and_zero_downtime_operations_chunk_011 | rrf: 0.0325 | semantic: 0.431 (#2) | bm25: #1
+  Text: Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. …
+  Source: data/raw/scaling-and-zero-downtime-operations.md
+  Document: scaling_and_zero_downtime_operations | Section: Zero-Downtime Deployments | Type: playbook
+```
+
+Every hit names which branch surfaced it (`semantic` rank, `bm25` rank) and the fused `rrf`
+score — the units are deliberately separate, because RRF scores and cosine similarities are not
+comparable.
+
+## Baseline vs improved
+
+Full table and per-query detail: [`outputs/retrieval_comparison.md`](outputs/retrieval_comparison.md).
+Aggregates over the nine in-corpus queries (top-3 precision = share of top-3 slots from an
+expected document):
+
+| Configuration | Top-1 hit rate | Top-3 precision |
+|---|---|---|
+| baseline (HW2, semantic only) | 1.00 | 0.889 |
+| filter-only | 1.00 | 0.926 |
+| hybrid-only | **0.89** | 0.889 |
+| **combined (filter + hybrid)** | **1.00** | **0.963** |
+
+8 of 10 queries were filtered (q05's vocabulary is ambiguous and q10 is out-of-corpus — both
+correctly fall through unfiltered); 6 of 10 changed their top-1 chunk.
+
+## Conclusions — Homework #3
+
+**What gave the biggest effect: metadata filtering — but not for the obvious reason.** Its own
+precision gain is modest (0.889 → 0.926, from evicting q09's foreign-document chunk). Its real
+value is constraining hybrid search's failure mode: run alone, hybrid REGRESSED q09's top-1 to a
+CQRS chunk (lexical strength of the word "event") and leaked a migration chunk into q06's top-3,
+dropping the top-1 hit rate to 0.89. Combined, the filter caps the lexical leakage while BM25
+re-ranks within the right document — 0.963 precision with the hit rate intact.
+
+**The largest single-query win belongs to hybrid search**, on exactly the query filtering cannot
+touch: q05 stays unfiltered (ambiguous vocabulary), and BM25 promoted two genuinely better
+event-sourcing chunks from semantic ranks 4–5 into the top-2, shrinking HW2's three-document leak
+to one foreign chunk.
+
+**Honest caveats.** (1) With four `document_type` values mapping 1:1 to four documents, a correct
+filter is equivalent to picking the right document — the measured effect is an upper bound that a
+corpus with many documents per type would not reproduce as strongly. (2) Hybrid is a net win in
+aggregate, not per query: q08's top-1 got qualitatively worse because the breadcrumb repeats the
+document title's "5,000 Requests per Second" in every chunk, and BM25 amplifies exactly that
+title-token inflation (flagged in HW2, inherited here). (3) The keyword rules encode corpus
+vocabulary, not query wording, but a production system would replace them with a learned query
+classifier — recorded, with the other limits, in
+[`docs/homework3/retrieval-improvements-spec.md`](docs/homework3/retrieval-improvements-spec.md).
+
+---
+
 ## Repository layout
 
 ```
@@ -271,21 +408,22 @@ max 930, **90.9%** inside the 500–1000 band. All figures are printed by
 ├── data/processed/
 │   ├── chunks.jsonl              77 chunks — the Homework #1 deliverable
 │   └── chunks_500.jsonl          116 chunks at 500/100 — chunk-size experiment only
-├── data/eval/test_queries.json   10 evaluation queries + relevance comments
+├── data/eval/test_queries.json   10 evaluation queries + relevance comments (HW2 + HW3)
 ├── index/
 │   ├── chroma/                   the graded index (77 vectors) + manifest.json
 │   └── chroma_500/               experiment index (116 vectors) — not a deliverable
 ├── scripts/
 │   ├── prepare_knowledge_base.py Homework #1 — stdlib only
-│   ├── rag_lib.py                settings, embeddings, index handle
+│   ├── rag_lib.py                settings, embeddings, index handle + HW3 filter/BM25/RRF
 │   ├── build_index.py            embed chunks → Chroma
 │   ├── retrieval.py              top-k semantic search (CLI)
+│   ├── retrieval_improved.py     Homework #3 — filtered + hybrid search, --compare
 │   ├── run_test_queries.py       evaluation → outputs/retrieval_examples.md
 │   └── chunk_size_experiment.py  800/150 vs 500/100 comparison
 ├── notebooks/retrieval.ipynb     the same pipeline, interactively
-├── outputs/                      retrieval examples + experiment results
-├── tests/                        74 tests; no API key or network required
-└── docs/homework1|homework2|tasks
+├── outputs/                      retrieval examples, comparison + experiment results
+├── tests/                        126 tests; no API key or network required
+└── docs/homework1|homework2|homework3|tasks
 ```
 
 Design notes and the full pipeline specification live in

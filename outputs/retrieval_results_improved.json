@@ -1,0 +1,1739 @@
+{
+  "model": "text-embedding-3-small",
+  "k": 3,
+  "baseline": "outputs/retrieval_results.json",
+  "aggregates": {
+    "baseline": {
+      "top1_hit_rate": 1.0,
+      "top3_precision": 0.8888888888888888,
+      "n": 9
+    },
+    "filter-only": {
+      "top1_hit_rate": 1.0,
+      "top3_precision": 0.925925925925926,
+      "n": 9
+    },
+    "hybrid-only": {
+      "top1_hit_rate": 0.8888888888888888,
+      "top3_precision": 0.8888888888888888,
+      "n": 9
+    },
+    "combined": {
+      "top1_hit_rate": 1.0,
+      "top3_precision": 0.9629629629629629,
+      "n": 9
+    }
+  },
+  "records": [
+    {
+      "id": "q01",
+      "category": "direct",
+      "query": "What is a backhaul and why does it matter to a carrier?",
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "inferred_document_type": "concept-guide",
+      "hw3_comment": "No change at top-1 \u2014 the direct query was already resolved correctly, and the filter (concept-guide, correctly inferred) had nothing to evict from an all-primer top-3. Hybrid only reshuffled rank 3 within the same document. The improved pipeline's job here was to not break an easy case, and it didn't.",
+      "baseline_top1": "freight_exchange_domain_primer_chunk_018",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "freight_exchange_domain_primer_chunk_018",
+          "score": 0.5355725884437561,
+          "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Key Domain Vocabulary"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "freight_exchange_domain_primer_chunk_011",
+          "score": 0.46032392978668213,
+          "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Load Matching Mechanics. and whether the cargo is stackable, and finally the loading date window, which expires and therefore prunes the candidate set most ag\u2026",
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Load Matching Mechanics"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "freight_exchange_domain_primer_chunk_016",
+          "score": 0.44119691848754883,
+          "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. A lane is a recurring origin-destination corridor, and carriers price and plan around lanes rather than individual addresses, because a\u2026",
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Key Domain Vocabulary"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": "concept-guide",
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": null,
+              "semantic_score": 0.5356060266494751,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_011",
+              "rrf_score": null,
+              "semantic_score": 0.4603615999221802,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Load Matching Mechanics. and whether the cargo is stackable, and finally the loading date window, which expires and therefore prunes the candidate set most ag\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Load Matching Mechanics"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_016",
+              "rrf_score": null,
+              "semantic_score": 0.44119489192962646,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. A lane is a recurring origin-destination corridor, and carriers price and plan around lanes rather than individual addresses, because a\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": 0.03278688524590164,
+              "semantic_score": 0.5356060266494751,
+              "semantic_rank": 1,
+              "bm25_rank": 1,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_011",
+              "rrf_score": 0.03225806451612903,
+              "semantic_score": 0.4603615999221802,
+              "semantic_rank": 2,
+              "bm25_rank": 2,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Load Matching Mechanics. and whether the cargo is stackable, and finally the loading date window, which expires and therefore prunes the candidate set most ag\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Load Matching Mechanics"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_006",
+              "rrf_score": 0.030117753623188408,
+              "semantic_score": 0.3893688917160034,
+              "semantic_rank": 9,
+              "bm25_rank": 4,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Core Actors And Roles. is the umbrella term for any participant offering logistics services on the platform, whether haulage, forwarding, warehousing, or a co\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Core Actors And Roles"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": "concept-guide",
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": 0.03278688524590164,
+              "semantic_score": 0.5356060266494751,
+              "semantic_rank": 1,
+              "bm25_rank": 1,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_011",
+              "rrf_score": 0.03225806451612903,
+              "semantic_score": 0.4603615999221802,
+              "semantic_rank": 2,
+              "bm25_rank": 2,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Load Matching Mechanics. and whether the cargo is stackable, and finally the loading date window, which expires and therefore prunes the candidate set most ag\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Load Matching Mechanics"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_005",
+              "rrf_score": 0.03076923076923077,
+              "semantic_score": 0.3987255096435547,
+              "semantic_rank": 5,
+              "bm25_rank": 5,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Core Actors And Roles. leg is delivered. Those objectives are related but not symmetric, which is why marketplace design cannot give both sides identical mech\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Core Actors And Roles"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q02",
+      "category": "direct",
+      "query": "How does CQRS separate the write model from the read models?",
+      "expected_documents": [
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "inferred_document_type": "architecture-guide",
+      "hw3_comment": "Top-1 and top-2 unchanged (filter correctly inferred architecture-guide; all hits were already CQRS chunks). BM25 agreed with the semantic top-1 (#1 in both rankings), which resolves HW2's observation that the 0.582 tie made the order arbitrary \u2014 the lexical branch now breaks that tie deliberately rather than by chance. Rank 3 swapped to the Operational Realities chunk on keyword strength; lateral, same document.",
+      "baseline_top1": "cqrs_event_sourcing_for_logistics_chunk_002",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_002",
+          "score": 0.5816373825073242,
+          "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. rules. Reads are constant, tolerant of being a moment out of date, and want a flat shape that no normalized booking schema will produce cheaply. Ser\u2026",
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Why CQRS Fits Freight"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_001",
+          "score": 0.581372857093811,
+          "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. Command Query Responsibility Segregation separates the model that accepts state changes from the models that answer questions, and a freight exchang\u2026",
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Why CQRS Fits Freight"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_005",
+          "score": 0.5786726474761963,
+          "preview": "CQRS and Event Sourcing in a Freight Platform > The Command Side. is what keeps the write model small, and a small write model is the point \u2014 it is the only part of the system that must be strongly consistent. Commands\u2026",
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "The Command Side"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": "architecture-guide",
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_002",
+              "rrf_score": null,
+              "semantic_score": 0.5816373825073242,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. rules. Reads are constant, tolerant of being a moment out of date, and want a flat shape that no normalized booking schema will produce cheaply. Ser\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Why CQRS Fits Freight"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_001",
+              "rrf_score": null,
+              "semantic_score": 0.581372857093811,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. Command Query Responsibility Segregation separates the model that accepts state changes from the models that answer questions, and a freight exchang\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Why CQRS Fits Freight"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_005",
+              "rrf_score": null,
+              "semantic_score": 0.5786726474761963,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > The Command Side. is what keeps the write model small, and a small write model is the point \u2014 it is the only part of the system that must be strongly consistent. Commands\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "The Command Side"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_002",
+              "rrf_score": 0.03278688524590164,
+              "semantic_score": 0.5816373825073242,
+              "semantic_rank": 1,
+              "bm25_rank": 1,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. rules. Reads are constant, tolerant of being a moment out of date, and want a flat shape that no normalized booking schema will produce cheaply. Ser\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Why CQRS Fits Freight"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_001",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.581372857093811,
+              "semantic_rank": 2,
+              "bm25_rank": 3,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. Command Query Responsibility Segregation separates the model that accepts state changes from the models that answer questions, and a freight exchang\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Why CQRS Fits Freight"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_017",
+              "rrf_score": 0.031054405392392875,
+              "semantic_score": 0.5309466123580933,
+              "semantic_rank": 7,
+              "bm25_rank": 2,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Operational Realities. and rebuilds run against a shadow projection that is swapped in only once it has caught up. Schema evolution, snapshot invalidation, upcasting, and\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Operational Realities"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": "architecture-guide",
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_002",
+              "rrf_score": 0.03278688524590164,
+              "semantic_score": 0.5816373825073242,
+              "semantic_rank": 1,
+              "bm25_rank": 1,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. rules. Reads are constant, tolerant of being a moment out of date, and want a flat shape that no normalized booking schema will produce cheaply. Ser\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Why CQRS Fits Freight"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_001",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.581372857093811,
+              "semantic_rank": 2,
+              "bm25_rank": 3,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. Command Query Responsibility Segregation separates the model that accepts state changes from the models that answer questions, and a freight exchang\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Why CQRS Fits Freight"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_017",
+              "rrf_score": 0.031054405392392875,
+              "semantic_score": 0.5309466123580933,
+              "semantic_rank": 7,
+              "bm25_rank": 2,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Operational Realities. and rebuilds run against a shadow projection that is swapped in only once it has caught up. Schema evolution, snapshot invalidation, upcasting, and\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Operational Realities"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q03",
+      "category": "direct",
+      "query": "What is the strangler-fig pattern for migrating a monolith?",
+      "expected_documents": [
+        "monolith_to_microservices_migration"
+      ],
+      "inferred_document_type": "case-study",
+      "hw3_comment": "Unchanged at top-1 and top-2 \u2014 the strongest baseline result stays the strongest improved result (semantic #1 = BM25 #1). Rank 3 swapped to the document's introduction chunk via BM25's liking for title tokens; marginally less useful than the baseline's in-order continuation, but the same document and a reasonable entry point.",
+      "baseline_top1": "monolith_to_microservices_migration_chunk_010",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "monolith_to_microservices_migration_chunk_010",
+          "score": 0.6852942705154419,
+          "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. The strangler-fig pattern replaces a system incrementally by intercepting calls at its edge and redirecting them, capability by capability, unti\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Strangler-Fig Execution"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "monolith_to_microservices_migration_chunk_012",
+          "score": 0.6253635287284851,
+          "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. at the facade while it still forwards everything to the monolith, so the topology change and the behaviour changes are never in flight together.\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Strangler-Fig Execution"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "monolith_to_microservices_migration_chunk_011",
+          "score": 0.608104944229126,
+          "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. original. It is preferred over a rewrite because it keeps the product shippable throughout, and because each increment is independently reversib\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Strangler-Fig Execution"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": "case-study",
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_010",
+              "rrf_score": null,
+              "semantic_score": 0.6852942705154419,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. The strangler-fig pattern replaces a system incrementally by intercepting calls at its edge and redirecting them, capability by capability, unti\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "monolith_to_microservices_migration_chunk_012",
+              "rrf_score": null,
+              "semantic_score": 0.6253635287284851,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. at the facade while it still forwards everything to the monolith, so the topology change and the behaviour changes are never in flight together.\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_011",
+              "rrf_score": null,
+              "semantic_score": 0.608104944229126,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. original. It is preferred over a rewrite because it keeps the product shippable throughout, and because each increment is independently reversib\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_010",
+              "rrf_score": 0.03278688524590164,
+              "semantic_score": 0.6852942705154419,
+              "semantic_rank": 1,
+              "bm25_rank": 1,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. The strangler-fig pattern replaces a system incrementally by intercepting calls at its edge and redirecting them, capability by capability, unti\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "monolith_to_microservices_migration_chunk_012",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.6253635287284851,
+              "semantic_rank": 2,
+              "bm25_rank": 3,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. at the facade while it still forwards everything to the monolith, so the topology change and the behaviour changes are never in flight together.\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_001",
+              "rrf_score": 0.0315136476426799,
+              "semantic_score": 0.559522271156311,
+              "semantic_rank": 5,
+              "bm25_rank": 2,
+              "preview": "Migrating a Logistics Monolith to Microservices > Introduction. This narrative is a generic composite of standard strangler-fig practice as it is applied to freight and logistics platforms. It is not a report on any spe\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Introduction"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": "case-study",
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_010",
+              "rrf_score": 0.03278688524590164,
+              "semantic_score": 0.6852942705154419,
+              "semantic_rank": 1,
+              "bm25_rank": 1,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. The strangler-fig pattern replaces a system incrementally by intercepting calls at its edge and redirecting them, capability by capability, unti\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "monolith_to_microservices_migration_chunk_012",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.6253635287284851,
+              "semantic_rank": 2,
+              "bm25_rank": 3,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. at the facade while it still forwards everything to the monolith, so the topology change and the behaviour changes are never in flight together.\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_001",
+              "rrf_score": 0.0315136476426799,
+              "semantic_score": 0.559522271156311,
+              "semantic_rank": 5,
+              "bm25_rank": 2,
+              "preview": "Migrating a Logistics Monolith to Microservices > Introduction. This narrative is a generic composite of standard strangler-fig practice as it is applied to freight and logistics platforms. It is not a report on any spe\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Introduction"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q04",
+      "category": "paraphrase",
+      "query": "How do I stop my trucks from driving back empty after a delivery?",
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "inferred_document_type": "concept-guide",
+      "hw3_comment": "Top-1 unchanged. The filter (concept-guide, inferred from 'trucks'/'delivery') was already satisfied, and hybrid reshuffled ranks 2\u20133 within the right document. The HW2 finding stands mostly unrepaired: when a paraphrase avoids the corpus vocabulary, BM25 has as little to grip as the embedding does \u2014 hybrid search helps lexical matches, and this query deliberately offers none.",
+      "baseline_top1": "freight_exchange_domain_primer_chunk_018",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "freight_exchange_domain_primer_chunk_018",
+          "score": 0.4131818413734436,
+          "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Key Domain Vocabulary"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "freight_exchange_domain_primer_chunk_011",
+          "score": 0.39852893352508545,
+          "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Load Matching Mechanics. and whether the cargo is stackable, and finally the loading date window, which expires and therefore prunes the candidate set most ag\u2026",
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Load Matching Mechanics"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "freight_exchange_domain_primer_chunk_008",
+          "score": 0.38933253288269043,
+          "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. \u2014 a supply-side transition, and one best modelled as reversible, since several carriers may sit matched against one load while the shipper\u2026",
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "The Load Lifecycle"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": "concept-guide",
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": null,
+              "semantic_score": 0.41320979595184326,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_011",
+              "rrf_score": null,
+              "semantic_score": 0.3985288143157959,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Load Matching Mechanics. and whether the cargo is stackable, and finally the loading date window, which expires and therefore prunes the candidate set most ag\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Load Matching Mechanics"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_008",
+              "rrf_score": null,
+              "semantic_score": 0.3893744945526123,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. \u2014 a supply-side transition, and one best modelled as reversible, since several carriers may sit matched against one load while the shipper\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "The Load Lifecycle"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": 0.03278688524590164,
+              "semantic_score": 0.41320979595184326,
+              "semantic_rank": 1,
+              "bm25_rank": 1,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_004",
+              "rrf_score": 0.03007688828584351,
+              "semantic_score": 0.3385707139968872,
+              "semantic_rank": 7,
+              "bm25_rank": 6,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Core Actors And Roles. Four roles account for most activity on a freight exchange, and each wants something different. The shipper is the party whose goods mu\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Core Actors And Roles"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_009",
+              "rrf_score": 0.029910714285714284,
+              "semantic_score": 0.37821048498153687,
+              "semantic_rank": 4,
+              "bm25_rank": 10,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. It becomes delivered when the consignee receives the goods and proof of delivery is captured \u2014 an operational fact, not yet a financial on\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "The Load Lifecycle"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": "concept-guide",
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": 0.03278688524590164,
+              "semantic_score": 0.41320979595184326,
+              "semantic_rank": 1,
+              "bm25_rank": 1,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_004",
+              "rrf_score": 0.03128054740957967,
+              "semantic_score": 0.3385707139968872,
+              "semantic_rank": 6,
+              "bm25_rank": 2,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Core Actors And Roles. Four roles account for most activity on a freight exchange, and each wants something different. The shipper is the party whose goods mu\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Core Actors And Roles"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_009",
+              "rrf_score": 0.031009615384615385,
+              "semantic_score": 0.37821048498153687,
+              "semantic_rank": 4,
+              "bm25_rank": 5,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. It becomes delivered when the consignee receives the goods and proof of delivery is captured \u2014 an operational fact, not yet a financial on\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "The Load Lifecycle"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q05",
+      "category": "paraphrase",
+      "query": "Why would you keep every change as a permanent record instead of just updating a row in a table?",
+      "expected_documents": [
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "inferred_document_type": null,
+      "hw3_comment": "The flagship hybrid win, on exactly the query the filter cannot help (inference correctly returns none \u2014 the vocabulary is ambiguous). BM25 promoted Event Sourcing Basics ('never deleted. A correction is expressed as a further event, in the way a ledger is corrected by a reversing entry') and Projections And Read Models from semantic ranks 4\u20135 into the top-2 \u2014 both better answers than the baseline's top-1. The three-document leak shrinks to one foreign chunk at rank 3; top-3 precision goes from 1/3 to 2/3.",
+      "baseline_top1": "cqrs_event_sourcing_for_logistics_chunk_012",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_012",
+          "score": 0.4244348406791687,
+          "preview": "CQRS and Event Sourcing in a Freight Platform > Designing Logistics Events. change are distinct facts with distinct consequences, so they are distinct events. Versioning must be planned before the first event is written\u2026",
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Designing Logistics Events"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "monolith_to_microservices_migration_chunk_017",
+          "score": 0.4117088317871094,
+          "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. one is read, then a read switch, then retirement of the old writer \u2014 expand, migrate, contract, each step independently deployable an\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_011",
+          "score": 0.3996630907058716,
+          "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. API changes must be additive, readers must tolerate unknown fields, and event schemas must evolve without reordering or repurposing\u2026",
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Zero-Downtime Deployments"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": null,
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_012",
+              "rrf_score": null,
+              "semantic_score": 0.4243937134742737,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Designing Logistics Events. change are distinct facts with distinct consequences, so they are distinct events. Versioning must be planned before the first event is written\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Designing Logistics Events"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "monolith_to_microservices_migration_chunk_017",
+              "rrf_score": null,
+              "semantic_score": 0.41171491146087646,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. one is read, then a read switch, then retirement of the old writer \u2014 expand, migrate, contract, each step independently deployable an\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_011",
+              "rrf_score": null,
+              "semantic_score": 0.399661660194397,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. API changes must be additive, readers must tolerate unknown fields, and event schemas must evolve without reordering or repurposing\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Zero-Downtime Deployments"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_015",
+              "rrf_score": 0.0315136476426799,
+              "semantic_score": 0.35395610332489014,
+              "semantic_rank": 5,
+              "bm25_rank": 2,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Projections And Read Models. That is the operational advantage of the pattern, and also the reason a projection should never hold state that is not derivable from events.\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Projections And Read Models"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_008",
+              "rrf_score": 0.03125,
+              "semantic_score": 0.36094796657562256,
+              "semantic_rank": 4,
+              "bm25_rank": 4,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Event Sourcing Basics. never deleted. A correction is expressed as a further event, in the way a ledger is corrected by a reversing entry rather than by erasing a line. Th\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Event Sourcing Basics"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_017",
+              "rrf_score": 0.031054405392392875,
+              "semantic_score": 0.41171491146087646,
+              "semantic_rank": 2,
+              "bm25_rank": 7,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. one is read, then a read switch, then retirement of the old writer \u2014 expand, migrate, contract, each step independently deployable an\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_015",
+              "rrf_score": 0.0315136476426799,
+              "semantic_score": 0.35395610332489014,
+              "semantic_rank": 5,
+              "bm25_rank": 2,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Projections And Read Models. That is the operational advantage of the pattern, and also the reason a projection should never hold state that is not derivable from events.\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Projections And Read Models"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_008",
+              "rrf_score": 0.03125,
+              "semantic_score": 0.36094796657562256,
+              "semantic_rank": 4,
+              "bm25_rank": 4,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Event Sourcing Basics. never deleted. A correction is expressed as a further event, in the way a ledger is corrected by a reversing entry rather than by erasing a line. Th\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Event Sourcing Basics"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_017",
+              "rrf_score": 0.031054405392392875,
+              "semantic_score": 0.41171491146087646,
+              "semantic_rank": 2,
+              "bm25_rank": 7,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. one is read, then a read switch, then retirement of the old writer \u2014 expand, migrate, contract, each step independently deployable an\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q06",
+      "category": "paraphrase",
+      "query": "How can I release new code without users noticing any interruption?",
+      "expected_documents": [
+        "scaling_and_zero_downtime_operations"
+      ],
+      "inferred_document_type": "playbook",
+      "hw3_comment": "The two Zero-Downtime Deployments chunks swapped places (BM25 prefers the additive-API-changes chunk; the semantic branch still ranks the rollout-mechanism chunk first) \u2014 a lateral move within the right section. The filter earned its keep at rank 3: hybrid-only leaked a migration chunk into the top-3 on shared deployment vocabulary, and the playbook filter kept the result all-playbook. Without the filter this query would have LOST precision to hybrid.",
+      "baseline_top1": "scaling_and_zero_downtime_operations_chunk_010",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_010",
+          "score": 0.430553674697876,
+          "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. Zero-downtime deployment is usually attributed to the rollout mechanism, but the mechanism is the smaller half. Rolling updates repl\u2026",
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Zero-Downtime Deployments"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_011",
+          "score": 0.4021034240722656,
+          "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. API changes must be additive, readers must tolerate unknown fields, and event schemas must evolve without reordering or repurposing\u2026",
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Zero-Downtime Deployments"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_012",
+          "score": 0.37084412574768066,
+          "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. of the application that cannot coexist with its predecessor. Renaming or retyping a column in place is the canonical way to break th\u2026",
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Zero-Downtime Deployments"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": "playbook",
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_010",
+              "rrf_score": null,
+              "semantic_score": 0.43059462308883667,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. Zero-downtime deployment is usually attributed to the rollout mechanism, but the mechanism is the smaller half. Rolling updates repl\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Zero-Downtime Deployments"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_011",
+              "rrf_score": null,
+              "semantic_score": 0.4021607041358948,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. API changes must be additive, readers must tolerate unknown fields, and event schemas must evolve without reordering or repurposing\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Zero-Downtime Deployments"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_012",
+              "rrf_score": null,
+              "semantic_score": 0.3708953261375427,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. of the application that cannot coexist with its predecessor. Renaming or retyping a column in place is the canonical way to break th\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Zero-Downtime Deployments"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_011",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.4021607041358948,
+              "semantic_rank": 2,
+              "bm25_rank": 3,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. API changes must be additive, readers must tolerate unknown fields, and event schemas must evolve without reordering or repurposing\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Zero-Downtime Deployments"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_010",
+              "rrf_score": 0.031099324975891997,
+              "semantic_score": 0.43059462308883667,
+              "semantic_rank": 1,
+              "bm25_rank": 8,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. Zero-downtime deployment is usually attributed to the rollout mechanism, but the mechanism is the smaller half. Rolling updates repl\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Zero-Downtime Deployments"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_004",
+              "rrf_score": 0.02877846790890269,
+              "semantic_score": 0.29927587509155273,
+              "semantic_rank": 9,
+              "bm25_rank": 10,
+              "preview": "Migrating a Logistics Monolith to Microservices > Starting Point: Why Logistics Monoliths Hit The Wall. free, a join answers most questions, and one pipeline serves the whole product. The wall it eventually hits is rare\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Starting Point: Why Logistics Monoliths Hit The Wall"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": "playbook",
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_011",
+              "rrf_score": 0.03252247488101534,
+              "semantic_score": 0.4021607041358948,
+              "semantic_rank": 2,
+              "bm25_rank": 1,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. API changes must be additive, readers must tolerate unknown fields, and event schemas must evolve without reordering or repurposing\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Zero-Downtime Deployments"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_010",
+              "rrf_score": 0.032266458495966696,
+              "semantic_score": 0.43059462308883667,
+              "semantic_rank": 1,
+              "bm25_rank": 3,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Zero-Downtime Deployments. Zero-downtime deployment is usually attributed to the rollout mechanism, but the mechanism is the smaller half. Rolling updates repl\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Zero-Downtime Deployments"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_004",
+              "rrf_score": 0.030621785881252923,
+              "semantic_score": 0.26586592197418213,
+              "semantic_rank": 9,
+              "bm25_rank": 2,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Horizontal Scaling Patterns. Horizontal scaling assumes statelessness, and statelessness is a design constraint rather than an emergent property. Application i\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Horizontal Scaling Patterns"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q07",
+      "category": "cross-document",
+      "query": "How is data kept consistent between the old system and the new services during a migration?",
+      "expected_documents": [
+        "monolith_to_microservices_migration",
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "inferred_document_type": "case-study",
+      "hw3_comment": "Top-1 moved to the chunk that opens on the dual-write premise ('both the monolith and a new service hold data for the same context, and both must be correct') \u2014 a better lead than the baseline's mid-section chunk. The case-study filter formally excludes the second expected document (CQRS), but the baseline never surfaced it either and HW2 already judged the migration document a complete answer; the conservative-inference risk this query was designed to expose did not materialize as a loss.",
+      "baseline_top1": "monolith_to_microservices_migration_chunk_017",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "monolith_to_microservices_migration_chunk_017",
+          "score": 0.6017391681671143,
+          "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. one is read, then a read switch, then retirement of the old writer \u2014 expand, migrate, contract, each step independently deployable an\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "monolith_to_microservices_migration_chunk_014",
+          "score": 0.5950835347175598,
+          "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. For most of a migration both the monolith and a new service hold data for the same context, and both must be correct. Batch replicati\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "monolith_to_microservices_migration_chunk_016",
+          "score": 0.5891440510749817,
+          "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. delivery eventually produces duplicates, and events are commonly keyed by entity identifier so per-entity ordering is preserved withi\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": "case-study",
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_017",
+              "rrf_score": null,
+              "semantic_score": 0.6016737222671509,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. one is read, then a read switch, then retirement of the old writer \u2014 expand, migrate, contract, each step independently deployable an\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "monolith_to_microservices_migration_chunk_014",
+              "rrf_score": null,
+              "semantic_score": 0.5950443744659424,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. For most of a migration both the monolith and a new service hold data for the same context, and both must be correct. Batch replicati\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_016",
+              "rrf_score": null,
+              "semantic_score": 0.5890822410583496,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. delivery eventually produces duplicates, and events are commonly keyed by entity identifier so per-entity ordering is preserved withi\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_014",
+              "rrf_score": 0.031754032258064516,
+              "semantic_score": 0.5950443744659424,
+              "semantic_rank": 2,
+              "bm25_rank": 4,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. For most of a migration both the monolith and a new service hold data for the same context, and both must be correct. Batch replicati\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "monolith_to_microservices_migration_chunk_002",
+              "rrf_score": 0.03131881575727918,
+              "semantic_score": 0.5092436075210571,
+              "semantic_rank": 7,
+              "bm25_rank": 1,
+              "preview": "Migrating a Logistics Monolith to Microservices > Introduction. and that end state is written in normative voice: what a migration of this shape typically requires, why the pattern exists, and what it costs. The documen\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Introduction"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_016",
+              "rrf_score": 0.030798389007344232,
+              "semantic_score": 0.5890822410583496,
+              "semantic_rank": 3,
+              "bm25_rank": 7,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. delivery eventually produces duplicates, and events are commonly keyed by entity identifier so per-entity ordering is preserved withi\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": "case-study",
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_014",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.5950443744659424,
+              "semantic_rank": 2,
+              "bm25_rank": 3,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. For most of a migration both the monolith and a new service hold data for the same context, and both must be correct. Batch replicati\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "monolith_to_microservices_migration_chunk_017",
+              "rrf_score": 0.031544957774465976,
+              "semantic_score": 0.6016737222671509,
+              "semantic_rank": 1,
+              "bm25_rank": 6,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. one is read, then a read switch, then retirement of the old writer \u2014 expand, migrate, contract, each step independently deployable an\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_002",
+              "rrf_score": 0.03131881575727918,
+              "semantic_score": 0.5092436075210571,
+              "semantic_rank": 7,
+              "bm25_rank": 1,
+              "preview": "Migrating a Logistics Monolith to Microservices > Introduction. and that end state is written in normative voice: what a migration of this shape typically requires, why the pattern exists, and what it costs. The documen\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Introduction"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q08",
+      "category": "cross-document",
+      "query": "What has to be true for the platform to handle 5,000 requests per second?",
+      "expected_documents": [
+        "scaling_and_zero_downtime_operations",
+        "freight_exchange_domain_primer"
+      ],
+      "inferred_document_type": "playbook",
+      "hw3_comment": "The honest negative example. BM25 promoted the Observability chunk to top-1 over the Load Profile chunk that HW2 judged the best answer \u2014 the breadcrumb repeats '5,000 Requests per Second' in every chunk of this document, so the lexical branch amplifies exactly the title-token inflation HW2 flagged on the semantic side. Still the right document, still a hit, and the displaced chunk sits at rank 2, but qualitatively the top-1 got slightly worse. This is the design doc's breadcrumb-bias limitation showing up on schedule.",
+      "baseline_top1": "scaling_and_zero_downtime_operations_chunk_001",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_001",
+          "score": 0.6462070941925049,
+          "preview": "Operating a Freight Platform at 5,000 Requests per Second > The Load Profile. An aggregate figure such as 5,000 requests per second describes a freight platform only crudely, because that number is the sum of at least t\u2026",
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "The Load Profile"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_016",
+          "score": 0.6290982365608215,
+          "preview": "Operating a Freight Platform at 5,000 Requests per Second > Observability. The golden signals \u2014 latency, traffic, errors, and saturation \u2014 remain the right starting frame, provided they are reported per workload class r\u2026",
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Observability"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_003",
+          "score": 0.6222736239433289,
+          "preview": "Operating a Freight Platform at 5,000 Requests per Second > The Load Profile. failed booking is a lost commercial transaction. The engineering consequence is that these three must be sized, scaled, and degraded independ\u2026",
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "The Load Profile"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": "playbook",
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_001",
+              "rrf_score": null,
+              "semantic_score": 0.6462070941925049,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > The Load Profile. An aggregate figure such as 5,000 requests per second describes a freight platform only crudely, because that number is the sum of at least t\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "The Load Profile"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_016",
+              "rrf_score": null,
+              "semantic_score": 0.6290982365608215,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Observability. The golden signals \u2014 latency, traffic, errors, and saturation \u2014 remain the right starting frame, provided they are reported per workload class r\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Observability"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_003",
+              "rrf_score": null,
+              "semantic_score": 0.6222736239433289,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > The Load Profile. failed booking is a lost commercial transaction. The engineering consequence is that these three must be sized, scaled, and degraded independ\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "The Load Profile"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_016",
+              "rrf_score": 0.03252247488101534,
+              "semantic_score": 0.6290982365608215,
+              "semantic_rank": 2,
+              "bm25_rank": 1,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Observability. The golden signals \u2014 latency, traffic, errors, and saturation \u2014 remain the right starting frame, provided they are reported per workload class r\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Observability"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_001",
+              "rrf_score": 0.032266458495966696,
+              "semantic_score": 0.6462070941925049,
+              "semantic_rank": 1,
+              "bm25_rank": 3,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > The Load Profile. An aggregate figure such as 5,000 requests per second describes a freight platform only crudely, because that number is the sum of at least t\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "The Load Profile"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_003",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.6222736239433289,
+              "semantic_rank": 3,
+              "bm25_rank": 2,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > The Load Profile. failed booking is a lost commercial transaction. The engineering consequence is that these three must be sized, scaled, and degraded independ\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "The Load Profile"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": "playbook",
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_016",
+              "rrf_score": 0.03252247488101534,
+              "semantic_score": 0.6290982365608215,
+              "semantic_rank": 2,
+              "bm25_rank": 1,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Observability. The golden signals \u2014 latency, traffic, errors, and saturation \u2014 remain the right starting frame, provided they are reported per workload class r\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Observability"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_001",
+              "rrf_score": 0.032266458495966696,
+              "semantic_score": 0.6462070941925049,
+              "semantic_rank": 1,
+              "bm25_rank": 3,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > The Load Profile. An aggregate figure such as 5,000 requests per second describes a freight platform only crudely, because that number is the sum of at least t\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "The Load Profile"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_003",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.6222736239433289,
+              "semantic_rank": 3,
+              "bm25_rank": 2,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > The Load Profile. failed booking is a lost commercial transaction. The engineering consequence is that these three must be sized, scaled, and degraded independ\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "The Load Profile"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q09",
+      "category": "cross-document",
+      "query": "Who confirms that a delivery actually happened, and what does that confirmation trigger?",
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "inferred_document_type": "concept-guide",
+      "hw3_comment": "The flagship filter win. Baseline rank 2 was a CQRS chunk that drifted in on the word 'event'; the concept-guide filter (inferred from 'delivery'/'confirmation') evicts it, and the improved top-3 is all-primer \u2014 including The Load Lifecycle chunk that BM25 surfaces at lexical rank 1. Top-3 precision goes from 2/3 to 3/3. Crucially, hybrid-only made this query WORSE (the CQRS chunk reached top-1), so the gain here belongs to filtering and to filtering constraining hybrid \u2014 the clearest single demonstration of why the combined pipeline needs both parts.",
+      "baseline_top1": "freight_exchange_domain_primer_chunk_009",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "freight_exchange_domain_primer_chunk_009",
+          "score": 0.4833142161369324,
+          "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. It becomes delivered when the consignee receives the goods and proof of delivery is captured \u2014 an operational fact, not yet a financial on\u2026",
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "The Load Lifecycle"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_018",
+          "score": 0.40755975246429443,
+          "preview": "CQRS and Event Sourcing in a Freight Platform > Operational Realities. read models fed by change events from a conventional store \u2014 capturing most of the read-scaling benefit at a fraction of the operational cost. The c\u2026",
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Operational Realities"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "freight_exchange_domain_primer_chunk_018",
+          "score": 0.4048267602920532,
+          "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Key Domain Vocabulary"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": "concept-guide",
+          "hybrid": false,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "freight_exchange_domain_primer_chunk_009",
+              "rrf_score": null,
+              "semantic_score": 0.4833142161369324,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. It becomes delivered when the consignee receives the goods and proof of delivery is captured \u2014 an operational fact, not yet a financial on\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "The Load Lifecycle"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": null,
+              "semantic_score": 0.4048267602920532,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_014",
+              "rrf_score": null,
+              "semantic_score": 0.40275323390960693,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Trust And Vetting. company registries, its transport operator licence is validated against the relevant national authority, and identity documents are reviewe\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Trust And Vetting"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "partial \u2014 an expected document appears below top-1",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_018",
+              "rrf_score": 0.03200204813108039,
+              "semantic_score": 0.40755975246429443,
+              "semantic_rank": 2,
+              "bm25_rank": 3,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Operational Realities. read models fed by change events from a conventional store \u2014 capturing most of the read-scaling benefit at a fraction of the operational cost. The c\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Operational Realities"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_008",
+              "rrf_score": 0.03177805800756621,
+              "semantic_score": 0.39596259593963623,
+              "semantic_rank": 5,
+              "bm25_rank": 1,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. \u2014 a supply-side transition, and one best modelled as reversible, since several carriers may sit matched against one load while the shipper\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "The Load Lifecycle"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": 0.03149801587301587,
+              "semantic_score": 0.4048267602920532,
+              "semantic_rank": 3,
+              "bm25_rank": 4,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": "concept-guide",
+          "hybrid": true,
+          "verdict": "hit \u2014 top-1 is from an expected document",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "freight_exchange_domain_primer_chunk_018",
+              "rrf_score": 0.03225806451612903,
+              "semantic_score": 0.4048267602920532,
+              "semantic_rank": 2,
+              "bm25_rank": 2,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > Key Domain Vocabulary. time and handling risk. That distinction changes the data model, since an LTL shipment has a route with intermediate stops rather than\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "Key Domain Vocabulary"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "freight_exchange_domain_primer_chunk_008",
+              "rrf_score": 0.032018442622950824,
+              "semantic_score": 0.39596259593963623,
+              "semantic_rank": 4,
+              "bm25_rank": 1,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. \u2014 a supply-side transition, and one best modelled as reversible, since several carriers may sit matched against one load while the shipper\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "The Load Lifecycle"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "freight_exchange_domain_primer_chunk_009",
+              "rrf_score": 0.032018442622950824,
+              "semantic_score": 0.4833142161369324,
+              "semantic_rank": 1,
+              "bm25_rank": 4,
+              "preview": "Freight Exchange Fundamentals: Actors, Loads, and Matching > The Load Lifecycle. It becomes delivered when the consignee receives the goods and proof of delivery is captured \u2014 an operational fact, not yet a financial on\u2026",
+              "source_file": "data/raw/freight-exchange-domain-primer.md",
+              "document_id": "freight_exchange_domain_primer",
+              "section": "The Load Lifecycle"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q10",
+      "category": "out-of-corpus",
+      "query": "What is the best way to fine-tune a large language model on a custom dataset?",
+      "expected_documents": [],
+      "inferred_document_type": null,
+      "hw3_comment": "Correctly unfiltered \u2014 no inference rule matches, which is the designed behaviour: a filter would have funnelled an unanswerable question into one document and made the results look more authoritative than they are. Hybrid reshuffled which irrelevant chunks appear (BM25 latches onto 'model'-adjacent migration vocabulary), but the semantic ceiling is unchanged at 0.266, still well below the 0.413 in-corpus floor. The HW2 conclusion stands: only a score floor, out of scope here as in HW2, would let the system decline to answer.",
+      "baseline_top1": "monolith_to_microservices_migration_chunk_014",
+      "baseline_hits": [
+        {
+          "rank": 1,
+          "chunk_id": "monolith_to_microservices_migration_chunk_014",
+          "score": 0.266124963760376,
+          "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. For most of a migration both the monolith and a new service hold data for the same context, and both must be correct. Batch replicati\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_007",
+          "score": 0.24960589408874512,
+          "preview": "Operating a Freight Platform at 5,000 Requests per Second > Caching Strategy. Caching on a freight platform is best treated as three separate problems with three different correctness contracts, rather than one cache la\u2026",
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Caching Strategy"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "monolith_to_microservices_migration_chunk_021",
+          "score": 0.2475142478942871,
+          "preview": "Migrating a Logistics Monolith to Microservices > Lessons Learned. The most consequential decision is what to extract first. The instinct is to start with the most painful component, but the more effective choice is usu\u2026",
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Lessons Learned"
+        }
+      ],
+      "configs": {
+        "filter-only": {
+          "document_type": null,
+          "hybrid": false,
+          "verdict": "out-of-corpus \u2014 judged on score separation, not on document match",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_014",
+              "rrf_score": null,
+              "semantic_score": 0.266124963760376,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. For most of a migration both the monolith and a new service hold data for the same context, and both must be correct. Batch replicati\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "scaling_and_zero_downtime_operations_chunk_007",
+              "rrf_score": null,
+              "semantic_score": 0.24960589408874512,
+              "semantic_rank": 2,
+              "bm25_rank": null,
+              "preview": "Operating a Freight Platform at 5,000 Requests per Second > Caching Strategy. Caching on a freight platform is best treated as three separate problems with three different correctness contracts, rather than one cache la\u2026",
+              "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+              "document_id": "scaling_and_zero_downtime_operations",
+              "section": "Caching Strategy"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_021",
+              "rrf_score": null,
+              "semantic_score": 0.2475142478942871,
+              "semantic_rank": 3,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Lessons Learned. The most consequential decision is what to extract first. The instinct is to start with the most painful component, but the more effective choice is usu\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Lessons Learned"
+            }
+          ]
+        },
+        "hybrid-only": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "out-of-corpus \u2014 judged on score separation, not on document match",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_013",
+              "rrf_score": 0.032018442622950824,
+              "semantic_score": 0.24452537298202515,
+              "semantic_rank": 4,
+              "bm25_rank": 1,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. its logic: a service that owns behaviour but still reads the monolith's tables is a distributed monolith with worse latency and no independence.\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_002",
+              "rrf_score": 0.029910714285714284,
+              "semantic_score": 0.2224406599998474,
+              "semantic_rank": 10,
+              "bm25_rank": 4,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. rules. Reads are constant, tolerant of being a moment out of date, and want a flat shape that no normalized booking schema will produce cheaply. Ser\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Why CQRS Fits Freight"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_014",
+              "rrf_score": 0.01639344262295082,
+              "semantic_score": 0.266124963760376,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. For most of a migration both the monolith and a new service hold data for the same context, and both must be correct. Batch replicati\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            }
+          ]
+        },
+        "combined": {
+          "document_type": null,
+          "hybrid": true,
+          "verdict": "out-of-corpus \u2014 judged on score separation, not on document match",
+          "hits": [
+            {
+              "rank": 1,
+              "chunk_id": "monolith_to_microservices_migration_chunk_013",
+              "rrf_score": 0.032018442622950824,
+              "semantic_score": 0.24452537298202515,
+              "semantic_rank": 4,
+              "bm25_rank": 1,
+              "preview": "Migrating a Logistics Monolith to Microservices > Strangler-Fig Execution. its logic: a service that owns behaviour but still reads the monolith's tables is a distributed monolith with worse latency and no independence.\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Strangler-Fig Execution"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_002",
+              "rrf_score": 0.029910714285714284,
+              "semantic_score": 0.2224406599998474,
+              "semantic_rank": 10,
+              "bm25_rank": 4,
+              "preview": "CQRS and Event Sourcing in a Freight Platform > Why CQRS Fits Freight. rules. Reads are constant, tolerant of being a moment out of date, and want a flat shape that no normalized booking schema will produce cheaply. Ser\u2026",
+              "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+              "document_id": "cqrs_event_sourcing_for_logistics",
+              "section": "Why CQRS Fits Freight"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "monolith_to_microservices_migration_chunk_014",
+              "rrf_score": 0.01639344262295082,
+              "semantic_score": 0.266124963760376,
+              "semantic_rank": 1,
+              "bm25_rank": null,
+              "preview": "Migrating a Logistics Monolith to Microservices > Keeping Data In Sync Mid-Migration. For most of a migration both the monolith and a new service hold data for the same context, and both must be correct. Batch replicati\u2026",
+              "source_file": "data/raw/monolith-to-microservices-migration.md",
+              "document_id": "monolith_to_microservices_migration",
+              "section": "Keeping Data In Sync Mid-Migration"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
