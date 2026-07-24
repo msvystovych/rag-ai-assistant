@@ -1,0 +1,76 @@
+# Домашнє завдання №3 — Покращення retrieval pipeline
+
+## 1. Опис завдання
+
+Покращити retrieval pipeline з попереднього завдання і порівняти результат до/після.
+Завдання передбачає:
+- збереження baseline результатів для тих самих 5–10 queries;
+- додавання metadata filtering;
+- додавання ще одного покращення на вибір: query rewriting, hybrid search або reranking;
+- порівняння baseline vs improved retrieval.
+
+**Мета** — не просто додати нову техніку, а довести, що retrieval став кращим.
+
+---
+
+## 2. Вимоги до виконання
+
+### Baseline
+- Використати той самий retrieval pipeline з HW2.
+- Зберегти результати для тих самих 5–10 test queries як baseline.
+
+### Metadata filtering
+- Додати хоча б один фільтр за metadata (наприклад: `document_type`, `domain`, `language`, `source_file`).
+- Фільтр має звужувати search space і покращувати точність.
+
+### Додаткове покращення (один варіант на вибір)
+| Варіант | Опис |
+|---|---|
+| Query rewriting | Переформулювати запит для кращого semantic match |
+| Query expansion | Додати синоніми або ключові слова до запиту |
+| Hybrid search | Поєднати semantic score + keyword score (BM25) |
+| Reranking | Після top-k semantic search відсортувати результати cross-encoder моделлю |
+
+### Тестування
+- Протестувати **ті самі 5–10 queries** що й у HW2.
+- Для кожного query показати: baseline top result vs improved top result.
+
+---
+
+## 3. Формат здачі
+
+Подати у вигляді оновленого репозиторію:
+
+| Що | Де |
+|---|---|
+| Оновлений retrieval script | `scripts/retrieval_improved.py` |
+| Порівняльна таблиця результатів | `outputs/retrieval_comparison.md` |
+| Оновлений README | `README.md` |
+
+`outputs/retrieval_comparison.md` має містити таблицю:
+
+| Query | Baseline top-1 | Improved top-1 | Що змінилось |
+|---|---|---|---|
+| Can I carry over vacation days? | remote_work_chunk_005 | vacation_policy_chunk_001 | Query rewriting виправив напрямок пошуку |
+
+---
+
+## 4. Критерії оцінювання
+
+| Критерій | Бали | Опис |
+|---|---|---|
+| Реалізовано metadata filtering | 15 | Фільтр працює, звужує результати |
+| Реалізовано одне з покращень (rewriting / hybrid / reranking) | 15 | Техніка реалізована коректно |
+| Порівняння baseline vs improved для 5+ queries | 10 | Таблиця або side-by-side приклади |
+| Висновок: що дало найбільший ефект | 10 | Є аргументований аналіз |
+| **Разом** | **50** | |
+
+---
+
+## 5. Приклад порівняльної таблиці
+
+| Query | Baseline top-1 | Improved top-1 | Що змінилось |
+|---|---|---|---|
+| How many vacation days do I get? | onboarding_guide_chunk_003 | vacation_policy_chunk_001 | Metadata filter `document_type=policy` прибрав нерелевантний guide |
+| What equipment can I use for remote work? | expense_policy_chunk_002 | remote_work_policy_chunk_002 | Query rewriting: "remote work equipment requirements" |
+| How do I submit expenses? | vacation_policy_chunk_005 | expense_policy_chunk_001 | Hybrid search підняв BM25 score для "submit expenses" |
