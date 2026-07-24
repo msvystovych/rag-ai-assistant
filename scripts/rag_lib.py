@@ -3,13 +3,20 @@
 Owns three things so nothing downstream re-derives them: the typed settings object (the single
 place any environment variable is read), the OpenAI embedding call, and the Chroma index handle.
 See docs/homework2/retrieval-spec.md.
+
+Homework #3 extends this module with the improved retrieval pipeline: metadata filtering
+(`search(..., where=...)`), a standard-library BM25 index, Reciprocal Rank Fusion, and the
+rule-based document-type inference behind `search_improved`. See
+docs/homework3/retrieval-improvements-spec.md.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -27,6 +34,45 @@ DEFAULT_MODEL = "text-embedding-3-small"
 DEFAULT_COLLECTION = "logistics_chunks"
 MANIFEST_NAME = "manifest.json"
 EMBED_BATCH_SIZE = 96
+
+# Homework #3 tuning values — single-sourced here so the library, the CLI defaults, and the
+# design doc cannot drift apart. Rationale for each: docs/homework3/retrieval-improvements-spec.md.
+BM25_K1 = 1.5
+BM25_B = 0.75
+RRF_K = 60
+RRF_POOL = 10
+
+# Query tokens that appear in nearly every sentence carry no ranking signal; dropping them keeps
+# BM25 scores driven by domain vocabulary instead of sentence glue.
+STOPWORDS = frozenset(
+    "a an and are as at be but by can do does for from how i in is it my of on or that the "
+    "this to was we what when where which who why will with you your".split()
+)
+
+# Maps each document_type (the four values owned by docs/homework1/assets/chunk.schema.json)
+# to corpus vocabulary that signals a query is about that document. Keywords are drawn from the
+# source documents' own terminology — never from the evaluation queries' wording — so the
+# inference is not tuned to the test set. A query matching no type (or tying) stays unfiltered:
+# a wrong filter is worse than none, and out-of-corpus queries must not be funnelled into a
+# document they cannot be answered by.
+DOCUMENT_TYPE_KEYWORDS: dict[str, frozenset[str]] = {
+    "concept-guide": frozenset(
+        "backhaul carrier carriers shipper shippers freight broker brokers load loads truck "
+        "trucks delivery deliveries exchange pod settlement".split()
+    ),
+    "architecture-guide": frozenset(
+        "cqrs sourcing command commands projection projections aggregate aggregates event "
+        "events".split()
+    ),
+    "case-study": frozenset(
+        "migration migrations migrate migrating monolith monoliths microservice microservices "
+        "strangler".split()
+    ),
+    "playbook": frozenset(
+        "scaling scale deploy deployment deployments downtime release releases rollout caching "
+        "cache observability rps throughput latency requests".split()
+    ),
+}
 
 
 class RetrievalError(Exception):
@@ -346,8 +392,14 @@ def search(
     k: int = 5,
     client: OpenAI | None = None,
     collection: Collection | None = None,
+    where: dict[str, Any] | None = None,
 ) -> list[SearchHit]:
-    """Embed `query` with the indexed model and return the top-k nearest chunks."""
+    """Embed `query` with the indexed model and return the top-k nearest chunks.
+
+    `where` is a Chroma metadata filter (e.g. ``{"document_type": "playbook"}``); it narrows the
+    search space before nearest-neighbour ranking, so a filtered query can return fewer than `k`
+    hits when the matching subset is small.
+    """
     if not query.strip():
         raise RetrievalError("query is empty")
     read_manifest(settings)
@@ -356,6 +408,7 @@ def search(
     result = target.query(
         query_embeddings=[vector],
         n_results=k,
+        where=where,
         include=["documents", "metadatas", "distances"],
     )
     hits: list[SearchHit] = []
@@ -384,6 +437,238 @@ def search(
                 distance=float(distance),
                 text=document or "",
                 metadata=dict(metadata or {}),
+            )
+        )
+    return hits
+
+
+# --- Homework #3: improved retrieval (metadata filtering + hybrid BM25/RRF) -------------------
+# Design decisions and tuning rationale: docs/homework3/retrieval-improvements-spec.md.
+
+
+def _tokenize(text: str) -> list[str]:
+    """Lowercased alphanumeric tokens with stopwords removed, duplicates preserved for BM25 tf."""
+    return [
+        token
+        for token in re.findall(r"[a-z0-9]+", text.lower())
+        if token not in STOPWORDS
+    ]
+
+
+def infer_document_type(query: str) -> str | None:
+    """Infer a document_type filter from the query's vocabulary, or None to stay unfiltered.
+
+    Counts distinct keyword matches per type; the unique best-scoring type wins. Zero matches or
+    a tie yields None — ambiguity means filtering would be a guess, and a wrong filter excludes
+    the right document entirely.
+    """
+    tokens = set(_tokenize(query))
+    counts = {
+        doc_type: len(tokens & keywords)
+        for doc_type, keywords in DOCUMENT_TYPE_KEYWORDS.items()
+    }
+    best = max(counts.values())
+    if best == 0:
+        return None
+    winners = [doc_type for doc_type, count in counts.items() if count == best]
+    if len(winners) > 1:
+        return None
+    return winners[0]
+
+
+class Bm25Index:
+    """In-memory BM25 (Okapi) over the chunk corpus — standard library only.
+
+    77 chunks fit comfortably in memory, so the index is rebuilt from chunks.jsonl on demand
+    rather than persisted; IDF is always computed over the FULL corpus so that a metadata filter
+    (via `allowed_ids`) narrows the candidate set without distorting term statistics.
+    """
+
+    def __init__(self, chunks: list[Chunk]) -> None:
+        if not chunks:
+            raise RetrievalError("cannot build a BM25 index from an empty chunk list")
+        self._by_id: dict[str, Chunk] = {chunk.chunk_id: chunk for chunk in chunks}
+        self._tokens: dict[str, list[str]] = {
+            chunk.chunk_id: _tokenize(chunk.text) for chunk in chunks
+        }
+        self._doc_length = {
+            chunk_id: len(tokens) for chunk_id, tokens in self._tokens.items()
+        }
+        total_length = sum(self._doc_length.values())
+        self._avg_length = total_length / len(chunks) if total_length else 1.0
+        document_frequency: dict[str, int] = {}
+        for tokens in self._tokens.values():
+            for term in set(tokens):
+                document_frequency[term] = document_frequency.get(term, 0) + 1
+        corpus_size = len(chunks)
+        # The +0.5 / +1 smoothing keeps IDF positive even for terms present in most chunks.
+        self._idf = {
+            term: math.log(1.0 + (corpus_size - freq + 0.5) / (freq + 0.5))
+            for term, freq in document_frequency.items()
+        }
+
+    def chunk(self, chunk_id: str) -> Chunk:
+        return self._by_id[chunk_id]
+
+    def matching_ids(self, metadata_key: str, value: Any) -> frozenset[str]:
+        """Chunk ids whose metadata carries `metadata_key == value` — the BM25-side filter."""
+        return frozenset(
+            chunk_id
+            for chunk_id, chunk in self._by_id.items()
+            if chunk.metadata.get(metadata_key) == value
+        )
+
+    def top(
+        self, query: str, *, k: int, allowed_ids: frozenset[str] | None = None
+    ) -> list[tuple[str, float]]:
+        """Top-k (chunk_id, bm25_score) for `query`, restricted to `allowed_ids` when given.
+
+        Only positive-scoring chunks are returned, so the list may be shorter than `k`.
+        Ties break on chunk_id to keep the ranking deterministic run-to-run.
+        """
+        terms = sorted(set(_tokenize(query)))
+        if not terms:
+            return []
+        scores: dict[str, float] = {}
+        for chunk_id, tokens in self._tokens.items():
+            if allowed_ids is not None and chunk_id not in allowed_ids:
+                continue
+            length_norm = (
+                1.0 - BM25_B + BM25_B * (self._doc_length[chunk_id] / self._avg_length)
+            )
+            score = 0.0
+            for term in terms:
+                frequency = tokens.count(term)
+                if frequency == 0:
+                    continue
+                idf = self._idf.get(term, 0.0)
+                score += (
+                    idf
+                    * (frequency * (BM25_K1 + 1))
+                    / (frequency + BM25_K1 * length_norm)
+                )
+            if score > 0.0:
+                scores[chunk_id] = score
+        ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+        return ranked[:k]
+
+
+def rrf_fuse(
+    rankings: list[list[str]], *, rrf_k: int = RRF_K
+) -> list[tuple[str, float]]:
+    """Reciprocal Rank Fusion: score(id) = Σ 1/(rrf_k + rank) across the given rankings.
+
+    Rank-based fusion sidesteps the unit mismatch between cosine similarity and BM25 scores.
+    Ties break on chunk_id so the fused order is deterministic.
+    """
+    scores: dict[str, float] = {}
+    for ranking in rankings:
+        for position, chunk_id in enumerate(ranking, start=1):
+            scores[chunk_id] = scores.get(chunk_id, 0.0) + 1.0 / (rrf_k + position)
+    return sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+
+
+@dataclass(frozen=True)
+class HybridHit:
+    """One improved-pipeline result.
+
+    `rrf_score` is rank-based and NOT comparable to the cosine `score` of SearchHit — that unit
+    mismatch is exactly why fusion happens on ranks. `semantic_score`/`semantic_rank` are None
+    for a chunk surfaced only by BM25; `bm25_rank` is None for a chunk surfaced only
+    semantically; `rrf_score` is None when the hit came from a non-hybrid (filter-only) run.
+    """
+
+    rank: int
+    chunk_id: str
+    rrf_score: float | None
+    semantic_score: float | None
+    semantic_rank: int | None
+    bm25_rank: int | None
+    text: str
+    metadata: dict[str, Any]
+
+    def preview(self, width: int = 220) -> str:
+        collapsed = " ".join(self.text.split())
+        return (
+            collapsed
+            if len(collapsed) <= width
+            else collapsed[: width - 1].rstrip() + "…"
+        )
+
+
+def search_improved(
+    query: str,
+    settings: Settings,
+    *,
+    k: int = 5,
+    client: OpenAI | None = None,
+    collection: Collection | None = None,
+    bm25: Bm25Index | None = None,
+    document_type: str | None = None,
+    hybrid: bool = True,
+) -> list[HybridHit]:
+    """The Homework #3 pipeline: optional document_type filter + optional hybrid BM25/RRF.
+
+    The filter narrows BOTH branches — the semantic branch via the Chroma `where=` clause and
+    the BM25 branch via `allowed_ids` — so they rank the same candidate space. Callers decide
+    the filter (pass `infer_document_type(query)` for the rule-based behaviour); passing None
+    searches unfiltered. Hybrid runs fetch RRF_POOL candidates per branch before fusing down
+    to k — fusion needs more candidates than the final k or promotion is impossible.
+    """
+    if document_type is not None and document_type not in DOCUMENT_TYPE_KEYWORDS:
+        valid = ", ".join(sorted(DOCUMENT_TYPE_KEYWORDS))
+        raise RetrievalError(
+            f"unknown document_type {document_type!r}. Valid values: {valid}"
+        )
+    where = {"document_type": document_type} if document_type is not None else None
+    fetch = max(k, RRF_POOL) if hybrid else k
+    semantic = search(
+        query, settings, k=fetch, client=client, collection=collection, where=where
+    )
+    if not hybrid:
+        return [
+            HybridHit(
+                rank=hit.rank,
+                chunk_id=hit.chunk_id,
+                rrf_score=None,
+                semantic_score=hit.score,
+                semantic_rank=hit.rank,
+                bm25_rank=None,
+                text=hit.text,
+                metadata=hit.metadata,
+            )
+            for hit in semantic[:k]
+        ]
+    # search() has already verified the manifest digest, so chunks.jsonl is exactly the corpus
+    # the vector index was built from — the BM25 branch cannot silently rank different text.
+    index = bm25 if bm25 is not None else Bm25Index(load_chunks(settings.chunks_path))
+    allowed = (
+        index.matching_ids("document_type", document_type)
+        if document_type is not None
+        else None
+    )
+    lexical = index.top(query, k=fetch, allowed_ids=allowed)
+    semantic_by_id = {hit.chunk_id: hit for hit in semantic}
+    bm25_rank_by_id = {
+        chunk_id: position for position, (chunk_id, _) in enumerate(lexical, start=1)
+    }
+    fused = rrf_fuse(
+        [[hit.chunk_id for hit in semantic], [chunk_id for chunk_id, _ in lexical]]
+    )
+    hits: list[HybridHit] = []
+    for rank, (chunk_id, rrf_score) in enumerate(fused[:k], start=1):
+        semantic_hit = semantic_by_id.get(chunk_id)
+        source = semantic_hit if semantic_hit is not None else index.chunk(chunk_id)
+        hits.append(
+            HybridHit(
+                rank=rank,
+                chunk_id=chunk_id,
+                rrf_score=rrf_score,
+                semantic_score=semantic_hit.score if semantic_hit else None,
+                semantic_rank=semantic_hit.rank if semantic_hit else None,
+                bm25_rank=bm25_rank_by_id.get(chunk_id),
+                text=source.text,
+                metadata=dict(source.metadata),
             )
         )
     return hits

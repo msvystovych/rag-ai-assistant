@@ -17,8 +17,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from collections.abc import Sequence
+
 from rag_lib import (
     REPO_ROOT,
+    HybridHit,
     RetrievalError,
     SearchHit,
     Settings,
@@ -62,7 +65,9 @@ def load_queries(path: Path) -> list[dict[str, Any]]:
     return queries
 
 
-def verdict(hits: list[SearchHit], expected: list[str]) -> str:
+def verdict(hits: Sequence[SearchHit | HybridHit], expected: list[str]) -> str:
+    # Widened for Homework #3: the improved pipeline's HybridHit carries the same metadata
+    # contract, and the verdict only reads document_id — one verdict keeps the two runs comparable.
     if not hits:
         return "no results"
     top_documents = [hit.metadata.get("document_id", "") for hit in hits]
