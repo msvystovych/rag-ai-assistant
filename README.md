@@ -79,6 +79,8 @@ python scripts/run_test_queries.py --k 3
 python scripts/chunk_size_experiment.py --k 3
 
 # 6. Homework #3 — improved search and the baseline-vs-improved comparison.
+#    Query mode infers the document_type filter; --document-type overrides it, --no-filter and
+#    --no-hybrid disable each technique. --compare reads the committed HW2 baseline read-only.
 python scripts/retrieval_improved.py --query "How do we release code without interruption?" --k 3
 python scripts/retrieval_improved.py --compare --k 3
 ```
