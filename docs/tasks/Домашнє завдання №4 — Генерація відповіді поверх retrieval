@@ -1,0 +1,144 @@
+# Домашнє завдання №4 — Генерація відповіді поверх retrieval
+
+## 1. Опис завдання
+
+Побудувати перший простий QA pipeline, у якому модель відповідає на основі знайденого context, а не з загальних знань.
+Завдання передбачає:
+- створення prompt template для RAG-відповіді;
+- реалізацію pipeline: question → retrieval → prompt → answer;
+- додавання citation або source reference у відповідь;
+- тестування на 5–10 запитах і аналіз поведінки моделі.
+
+**Мета** — побудувати grounded QA: модель відповідає тільки на основі retrieved context і чесно каже "не знаю", якщо context недостатній.
+
+---
+
+## 2. Вимоги до виконання
+
+### Prompt template
+Prompt має містити:
+- роль або інструкцію для моделі;
+- правило: відповідати **тільки на основі наданого context**;
+- fallback rule: якщо context недостатній — сказати про це явно;
+- вимогу цитувати джерело (chunk_id або source_file).
+
+### QA Pipeline
+Реалізувати pipeline:
+```
+user question
+→ retrieve top-k chunks
+→ build prompt with context
+→ call LLM
+→ return grounded answer with source
+```
+
+### Тестування
+Підготувати **5–10 test questions**, що включають:
+- просте питання, де відповідь точно є в context;
+- переформульоване питання;
+- питання, де context недостатній (fallback);
+- питання, де retrieval повертає слабкий chunk.
+
+### Prompt improvements
+Знайти **2–3 випадки**, де перший prompt працював погано, змінити його і описати результат.
+
+---
+
+## 3. Формат здачі
+
+| Що | Де |
+|---|---|
+| Prompt template | у README або окремому файлі |
+| QA pipeline script або notebook | `scripts/rag_answer.py` або `notebooks/` |
+| Приклади 5–10 питань з відповідями | `outputs/rag_answers_examples.md` |
+| 2–3 приклади prompt improvements | у README або `outputs/` |
+
+`outputs/rag_answers_examples.md` має містити для кожного питання:
+```
+Question: ...
+Retrieved chunks: chunk_id_1, chunk_id_2
+Answer: ...
+Source: ...
+Comment: ...
+```
+
+---
+
+## 4. Критерії оцінювання
+
+| Критерій | Бали | Опис |
+|---|---|---|
+| Prompt template з grounded answering rule | 10 | Є явна інструкція відповідати тільки з context |
+| Реалізований QA pipeline (retrieval → answer) | 15 | Script або notebook запускається |
+| Citation або source у кожній відповіді | 10 | chunk_id або source_file присутні |
+| Fallback behavior для порожнього/слабкого context | 5 | Модель не вигадує відповідь |
+| 2–3 приклади prompt improvements з поясненням | 10 | Є before/after і опис, що змінилось |
+| **Разом** | **50** | |
+
+---
+
+## 5. Приклад prompt template
+
+```
+You are an HR policy assistant.
+Answer the employee's question using only the provided context.
+If the context does not contain enough information to answer, say:
+"I do not have enough information in the available HR documents to answer this question."
+Do not use any general knowledge outside the provided context.
+Always mention the source document or chunk ID used in your answer.
+
+Context:
+{retrieved_context}
+
+Question:
+{user_question}
+
+Answer:
+```
+
+---
+
+## 6. Приклад виведення
+
+```
+Question: Can I carry over unused vacation days?
+
+Retrieved chunks:
+  - vacation_policy_chunk_001 (score: 0.91)
+  - vacation_policy_chunk_002 (score: 0.84)
+
+Answer:
+Yes. According to the Vacation Policy (vacation_policy_chunk_001),
+unused vacation days may be carried over until March 31 of the following year.
+You must submit a carry-over request to HR no later than December 15.
+
+Source: data/raw/vacation_policy.md
+
+Comment: Good result. Answer is grounded, citation is present.
+```
+
+---
+
+## 7. Приклад prompt improvement
+
+### Проблема
+Перший prompt дозволяв моделі відповідати занадто загально і не вимагав цитати джерела.
+
+### Original prompt
+```
+Answer the question using the context.
+Context: {retrieved_context}
+Question: {user_question}
+```
+
+### Updated prompt
+```
+Answer the employee's question using only the provided context.
+If the answer is not in the context, say so explicitly.
+Always cite the chunk ID or source file used.
+Context: {retrieved_context}
+Question: {user_question}
+```
+
+### Результат
+Відповідь стала більш grounded і містить посилання на джерело. Модель більше не додає інформацію з загальних знань.
