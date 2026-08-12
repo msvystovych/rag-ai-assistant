@@ -1,0 +1,138 @@
+# Домашнє завдання №5 — Інтеграція зовнішнього tool або джерела
+
+## 1. Опис завдання
+
+Додати до свого chatbot-а хоча б одне зовнішнє джерело даних або tool, який система може викликати для отримання актуальної або структурованої інформації.
+Завдання передбачає:
+- вибір типу tool (API, SQL/NoSQL, файлова інтеграція, web lookup або MCP-сумісний tool);
+- опис input/output contract;
+- реалізацію tool із validation;
+- демонстрацію виклику через orchestration layer або модель;
+- пояснення, коли tool корисніший за звичайний retrieval.
+
+**Мета** — показати integration pattern: `chatbot → tool request → validation → external source → normalized result → answer`
+
+---
+
+## 2. Вимоги до виконання
+
+### Вибір типу tool (один варіант)
+
+| Варіант | Приклад |
+|---|---|
+| API tool | `get_employee_status(employee_id)`, `get_exchange_rate(currency)` |
+| SQL / NoSQL tool | `query_open_tasks(owner_id)`, `get_employee_absences(id)` |
+| File integration tool | `parse_uploaded_document(file_path)`, `read_csv_summary(path)` |
+| Web lookup tool | `search_official_docs(query)`, `lookup_current_price(name)` |
+| MCP-compatible tool | Описати tool з name, description, input schema, output schema |
+
+### Опис tool
+- Назва tool-а
+- Тип: read tool або write/active tool
+- Мета: що повертає, яке джерело використовує
+- Коли викликати, коли НЕ викликати
+
+### Input / Output contract
+- Описати input parameters (JSON schema або Pydantic model)
+- Описати output structure
+- Навести приклад виклику
+
+### Validation
+Перед виконанням tool-а перевірити:
+- обов'язкові поля присутні
+- формат ID або параметрів коректний
+- write-action вимагає confirmation
+- tool не приймає raw SQL або небезпечні запити від моделі
+
+### Тестування
+Підготувати **3–5 прикладів** із поясненням, чому tool корисніший за retrieval у цьому кейсі.
+
+---
+
+## 3. Формат здачі
+
+| Що | Де |
+|---|---|
+| Реалізація tool / wrapper | `scripts/external_tool.py` |
+| Опис tool + приклади викликів | `outputs/tool_examples.md` або README |
+| Validation logic | у коді або описана окремо |
+
+`outputs/tool_examples.md` має містити для кожного прикладу:
+```
+User question: ...
+Tool called: tool_name
+Input: { ... }
+Result: { ... }
+Final answer: ...
+Why tool is better than retrieval: ...
+```
+
+---
+
+## 4. Критерії оцінювання
+
+| Критерій | Бали | Опис |
+|---|---|---|
+| Tool описаний (назва, тип, мета, коли викликати) | 5 | Є чіткий опис призначення |
+| Input / output contract визначено | 10 | Schema або приклад JSON |
+| Validation реалізовано | 10 | Перевіряються обов'язкові поля і формат |
+| Tool реалізовано і запускається | 10 | Функція або wrapper працює |
+| 3–5 прикладів з поясненням переваги перед retrieval | 10 | Є аргументоване пояснення |
+| Виклик через orchestration layer або модель показано | 5 | Видно, як tool інтегрований у pipeline |
+| **Разом** | **50** | |
+
+---
+
+## 5. Приклад реалізації tool
+
+```python
+from pydantic import BaseModel
+from typing import Optional
+
+class EmployeeStatusInput(BaseModel):
+    employee_id: str
+
+MOCK_EMPLOYEES = {
+    "emp_001": {"name": "Alice Johnson", "status": "active", "department": "Engineering", "manager": "Bob Smith"},
+    "emp_002": {"name": "Carol White", "status": "on_leave", "department": "HR", "manager": "David Brown"},
+}
+
+def get_employee_status(employee_id: str) -> dict:
+    """
+    Tool: get_employee_status
+    Type: read tool
+    Purpose: Returns current employee status from HR system mock.
+    When useful: when user asks about specific employee status, department, or manager.
+    When NOT useful: when user asks general policy questions (use RAG instead).
+    """
+    # Validation
+    if not employee_id:
+        return {"error": "employee_id is required"}
+    if not employee_id.startswith("emp_"):
+        return {"error": "Invalid employee_id format. Expected: emp_XXXX"}
+
+    result = MOCK_EMPLOYEES.get(employee_id)
+    if not result:
+        return {"error": f"Employee {employee_id} not found"}
+
+    return {"employee_id": employee_id, **result}
+```
+
+---
+
+## 6. Приклад виведення
+
+```
+User question: What is the current status of employee emp_001?
+
+Tool called: get_employee_status
+Input: {"employee_id": "emp_001"}
+Result: {"employee_id": "emp_001", "name": "Alice Johnson", "status": "active", "department": "Engineering"}
+
+Final answer:
+Employee Alice Johnson (emp_001) is currently active and works in the Engineering department.
+
+Why tool is better than retrieval:
+Employee status is dynamic data that changes over time (active, on_leave, terminated).
+It cannot be reliably stored in a static knowledge base. A tool that queries live data is the correct approach here.
+```
