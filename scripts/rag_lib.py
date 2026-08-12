@@ -8,6 +8,11 @@ Homework #3 extends this module with the improved retrieval pipeline: metadata f
 (`search(..., where=...)`), a standard-library BM25 index, Reciprocal Rank Fusion, and the
 rule-based document-type inference behind `search_improved`. See
 docs/homework3/retrieval-improvements-spec.md.
+
+Homework #4 adds one field here — `Settings.answer_model` — so the chat model used for answer
+generation is read in the same single place as every other environment variable. The generation
+logic itself lives in scripts/rag_answer.py, not here: this module is the retrieval layer.
+See docs/homework4/generation-spec.md.
 """
 
 from __future__ import annotations
@@ -31,6 +36,10 @@ from openai import OpenAI, OpenAIError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MODEL = "text-embedding-3-small"
+# Homework #4 answer generation. Kept beside the embedding model because both are "which model"
+# settings, but they are independent: the embedding model is pinned by the index manifest, while
+# the answer model can change between runs without invalidating anything.
+DEFAULT_ANSWER_MODEL = "gpt-4.1-mini"
 DEFAULT_COLLECTION = "logistics_chunks"
 MANIFEST_NAME = "manifest.json"
 EMBED_BATCH_SIZE = 96
@@ -121,6 +130,7 @@ class Settings:
     # can never dump the plaintext key.
     openai_api_key: str = field(repr=False)
     embedding_model: str
+    answer_model: str
     chunks_path: Path
     index_dir: Path
     collection_name: str
@@ -136,6 +146,7 @@ class Settings:
         index_dir: Path | None = None,
         collection_name: str | None = None,
         embedding_model: str | None = None,
+        answer_model: str | None = None,
         require_key: bool = True,
     ) -> Settings:
         load_dotenv()
@@ -150,6 +161,8 @@ class Settings:
             openai_api_key=api_key,
             embedding_model=embedding_model
             or os.environ.get("RAG_EMBEDDING_MODEL", DEFAULT_MODEL),
+            answer_model=answer_model
+            or os.environ.get("RAG_ANSWER_MODEL", DEFAULT_ANSWER_MODEL),
             chunks_path=chunks_path
             or REPO_ROOT / "data" / "processed" / "chunks.jsonl",
             index_dir=index_dir or REPO_ROOT / "index" / "chroma",

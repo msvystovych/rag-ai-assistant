@@ -73,6 +73,7 @@ def settings(tmp_path: Path) -> Settings:
     return Settings(
         openai_api_key="test-key",
         embedding_model="text-embedding-3-small",
+        answer_model="gpt-4.1-mini",
         chunks_path=tmp_path / "chunks.jsonl",
         index_dir=tmp_path / "index" / "chroma",
         collection_name="test_chunks",
