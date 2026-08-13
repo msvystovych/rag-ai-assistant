@@ -4,12 +4,14 @@ Homework #1 — preparing a knowledge base for a retrieval-augmented chatbot.
 Homework #2 — a basic semantic retrieval layer over that knowledge base.
 Homework #3 — an improved retrieval pipeline: metadata filtering + hybrid BM25/RRF search.
 Homework #4 — grounded answer generation: the model answers only from retrieved context, with citations.
+Homework #5 — external tool integration: the model calls a live operations API, or falls back to the knowledge base.
 
 Assignment specs:
 [`docs/tasks/Домашнє завдання №1 — Підготовка knowl`](docs/tasks/Домашнє%20завдання%20№1%20—%20Підготовка%20knowl) ·
 [`docs/tasks/Домашнє завдання №2 — Базовий semantic retrieval layer`](docs/tasks/Домашнє%20завдання%20№2%20—%20Базовий%20semantic%20retrieval%20layer) ·
 [`docs/tasks/Домашнє завдання №3 — Покращення retrieval pipeline`](docs/tasks/Домашнє%20завдання%20№3%20—%20Покращення%20retrieval%20pipeline) ·
-[`docs/tasks/Домашнє завдання №4 — Генерація відповіді поверх retrieval`](docs/tasks/Домашнє%20завдання%20№4%20—%20Генерація%20відповіді%20поверх%20retrieval)
+[`docs/tasks/Домашнє завдання №4 — Генерація відповіді поверх retrieval`](docs/tasks/Домашнє%20завдання%20№4%20—%20Генерація%20відповіді%20поверх%20retrieval) ·
+[`docs/tasks/Домашнє завдання №5 — Інтеграція зовнішнього tool або джерела`](docs/tasks/Домашнє%20завдання%20№5%20—%20Інтеграція%20зовнішнього%20tool%20або%20джерела)
 
 ```
 data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py → Chroma index
@@ -19,6 +21,8 @@ data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py 
       fused chunks ← document_type filter + BM25 ‖ semantic, RRF ← retrieval_improved.py
                                                                                   ↓
   grounded answer + [chunk_id] citations ← LLM ← prompt + relevance floor ← rag_answer.py
+                                                                                  ↑
+        no tool call ── model chooses ── tool call → validate → operations API → external_tool.py
 ```
 
 ## Subject area
@@ -95,9 +99,17 @@ python scripts/retrieval_improved.py --compare --k 3
 python scripts/rag_answer.py --query "What is a backhaul and why does it matter to a carrier?" --k 3
 python scripts/rag_answer.py --evaluate --k 3
 python scripts/rag_answer.py --improvements
+
+# 8. Homework #5 — external tool integration. The model is offered both tools on every turn and
+#    decides; no tool call falls through to the Homework #4 pipeline. --confirm is the operator's
+#    authorisation for the write tool and the model can never set it. --list-tools needs no key.
+python scripts/external_tool.py --list-tools
+python scripts/external_tool.py --question "Where is load FX-2026-000042 right now?"
+python scripts/external_tool.py --question "Book load FX-2026-000211 for carrier CAR-00817." --confirm
+python scripts/external_tool.py --examples
 ```
 
-Step 1 needs only Python ≥ 3.9. Steps 2–7 need the packages in `requirements.txt`; verified on
+Step 1 needs only Python ≥ 3.9. Steps 2–8 need the packages in `requirements.txt`; verified on
 Python 3.14.6. `notebooks/retrieval.ipynb` is the same pipeline interactively — it imports
 `scripts/rag_lib.py` rather than reimplementing anything.
 
@@ -181,7 +193,7 @@ print('direct', round(sum(top('direct'))/3, 3), '| paraphrase', round(sum(top('p
 '| in-corpus floor', round(min(ic), 3), '| out-of-corpus', round(top('out-of-corpus')[0], 3))"
 #   direct 0.601 | paraphrase 0.423 | in-corpus floor 0.413 | out-of-corpus 0.266
 
-# The full test suite — 203 tests (74 for HW1-2 + 52 for HW3 + 77 for HW4), offline, no key or network.
+# The full test suite — 324 tests (74 HW1-2 + 52 HW3 + 77 HW4 + 121 HW5), offline, no key or network.
 python -m pytest -q
 ```
 
@@ -534,7 +546,7 @@ print(f\"q10 refused: top {q['top_semantic_score']:.3f} < floor 0.35, context em
 grep -c "^## case-" outputs/prompt_improvements.md                 # 3
 grep -c "^### Result" outputs/prompt_improvements.md               # 3
 
-# The full test suite — 203 tests (74 HW1-2 + 52 HW3 + 77 HW4), offline, no key or network.
+# The full test suite — 324 tests (74 HW1-2 + 52 HW3 + 77 HW4 + 121 HW5), offline, no key or network.
 python -m pytest -q
 ```
 
@@ -659,6 +671,227 @@ still decides its context, and no prompt rule repairs a chunk that was never ret
 
 ---
 
+# Homework #5 — external tool integration
+
+The first layer that can consult something other than the corpus, and the first that can *act*:
+`question → model chooses → validate → operations API → answer`. Both tool schemas are handed to
+the model on every turn and it decides; when it asks for no tool the question falls through to the
+Homework #4 pipeline unchanged, so "when NOT to call the tool" is an observed behaviour rather than
+a claim about our dispatch code.
+
+Two tools ship, because a read-only integration can only demonstrate half of what § 2 asks about
+validation:
+
+1. **`get_load_status(load_id)`** — read. One load's live lifecycle status, carrier, ETA and last
+   known position with its age. The corpus defines what `in_transit` *means*; only the tool knows
+   which load is in it.
+2. **`book_load(load_id, carrier_id)`** — write, and irreversible. Booking is the first
+   irreversible commercial transition in the load lifecycle, so the tool refuses unless the human
+   operator authorised it through `--confirm`. The model cannot supply that authorisation: a
+   `confirmed: true` it sets for itself is refused and recorded as `model_self_confirmed`.
+
+Every argument reaching the tool layer was written by the model and is treated as untrusted —
+required fields, declared `pattern`, no unknown properties, and no free-text parameter anywhere in
+the contract for a query or a statement to be injected into. Design decisions and known limits:
+[`docs/homework5/tool-integration-spec.md`](docs/homework5/tool-integration-spec.md).
+
+## How to verify this homework (grading checklist)
+
+All § 3 deliverables are tracked in git: [`scripts/external_tool.py`](scripts/external_tool.py) ·
+[`outputs/tool_examples.md`](outputs/tool_examples.md) · the validation logic (in the script, and
+described below) — plus `data/external/loads.json`, the external source itself, and
+`outputs/tool_results.json`, the machine-readable backing for the examples (the HW5 counterpart of
+HW4's `rag_answers_results.json`; not § 3-listed, kept because the checks below verify against it).
+Everything except V4's live run works **offline — no API key required**.
+
+| Rubric criterion (§ 4) | Pts | Evidence | Check |
+|---|---|---|---|
+| Tool described (name, type, purpose, when to call) | 5 | `python scripts/external_tool.py --list-tools` — name, type, purpose, source and the description the model actually reads, for both tools; each states its `Do NOT call this` case | V1 |
+| Input / output contract defined | 10 | `GET_LOAD_STATUS_SCHEMA` / `BOOK_LOAD_SCHEMA` in [`scripts/external_tool.py`](scripts/external_tool.py) — JSON Schema literals that **are** the `tools=` payload, so contract and wire format cannot drift; output shape in [`outputs/tool_results.json`](outputs/tool_results.json) | V2 |
+| Validation implemented | 10 | All four § 2 clauses: required fields, id `pattern`, `additionalProperties: false`, and operator confirmation on the write. **121** offline tests, incl. 6 parametrized malformed identifiers and a test proving validation runs *before* the data layer | V3 |
+| Tool implemented and runs | 10 | [`scripts/external_tool.py`](scripts/external_tool.py) — `--question` / `--examples` / `--list-tools`; **4** of 6 committed runs reached a tool, 2 correctly did not | V4, V6 |
+| 3–5 examples explaining the advantage over retrieval | 10 | [`outputs/tool_examples.md`](outputs/tool_examples.md): **5** scenarios, each with a hand-authored `Why tool is better than retrieval:` — including s5, where the tool is the *worse* instrument | V5 |
+| Call through an orchestration layer or the model shown | 5 | Native OpenAI tool calling: `orchestrate()` in [`scripts/external_tool.py`](scripts/external_tool.py). No hand-written router — `route` in [`outputs/tool_results.json`](outputs/tool_results.json) records what the model chose per run | V6 |
+
+**Two results worth reading before the checks.** Neither is a success, and both are in the design
+doc's § Known limits with their reproduction commands.
+
+- The write gate was initially **unreachable**. `book_load`'s first description told the model the
+  call would be refused without operator authorisation, so it reasonably stopped calling — no tool
+  call, no refusal, nothing to grade. A gate the model declines to approach has not been tested.
+  The description now tells it to always call and let the tool decide, which is also the correct
+  division of responsibility.
+- **Format validation cannot detect fabrication.** Asked to book a load "for carrier 817" the model
+  emitted `CAR-00817` — well formed, real, and probably not what the user meant. Every validation
+  rule here passes it, because every one of them is syntactic. Only the confirmation gate stopped
+  it, and a read tool has no such gate.
+
+Scenario s3 also did not go as designed: given the malformed `FX-26-42` the model declined to emit
+it at all, because the contract it is shown declares the pattern. So `invalid_load_id_format` never
+fired live and is covered by the offline suite only — the contract is the outer filter, validation
+the inner one.
+
+```bash
+# V1 — both tools are described, with type, purpose and a when-NOT-to-call clause (offline, no key).
+python scripts/external_tool.py --list-tools | grep -E "^(Tool|Type|Purpose):"
+python -c "import sys; sys.path.insert(0,'scripts'); from external_tool import TOOL_SCHEMAS, TOOLS; \
+assert {s['function']['name'] for s in TOOL_SCHEMAS} == set(TOOLS) == {'get_load_status','book_load'}; \
+assert all('Do NOT call this' in s['function']['description'] for s in TOOL_SCHEMAS); \
+assert TOOLS['book_load'].is_write and not TOOLS['get_load_status'].is_write; \
+print('2 tools described; both carry an explicit when-NOT-to-call clause')"
+
+# V2 — the contract is the wire format, and nothing in it is a free-text field (offline).
+python -c "import sys; sys.path.insert(0,'scripts'); \
+from external_tool import TOOL_SCHEMAS, LOAD_ID_PATTERN, CARRIER_ID_PATTERN; \
+props = [p for s in TOOL_SCHEMAS for p in s['function']['parameters']['properties'].values()]; \
+assert all(s['function']['parameters']['additionalProperties'] is False for s in TOOL_SCHEMAS); \
+assert all('pattern' in p for p in props if p['type'] == 'string'), 'an unconstrained string is an injection surface'; \
+assert LOAD_ID_PATTERN in str(TOOL_SCHEMAS) and CARRIER_ID_PATTERN in str(TOOL_SCHEMAS); \
+print('additionalProperties=false on both; every string parameter is pattern-constrained')"
+
+# V3 — all four validation clauses refuse, and the model cannot confirm its own write (offline).
+python -c "import sys; sys.path.insert(0,'scripts'); import json; \
+from external_tool import ToolCall, validate_get_load_status as vg, validate_book_load as vb, dispatch; \
+c = lambda n, a: ToolCall(call_id='c', name=n, raw_arguments=json.dumps(a)); \
+assert vg(c('get_load_status', {}))[1].error == 'missing_argument'; \
+assert vg(c('get_load_status', {'load_id':'FX-26-42'}))[1].error == 'invalid_load_id_format'; \
+assert vg(c('get_load_status', {'load_id':'FX-2026-000042','sql':'DROP TABLE loads'}))[1].error == 'unknown_argument'; \
+w = {'load_id':'FX-2026-000211','carrier_id':'CAR-00817','confirmed':True}; \
+r = vb(c('book_load', w), operator_confirmed=False)[1]; \
+assert r.error == 'confirmation_required' and r.data['model_self_confirmed'] is True; \
+assert dispatch(c('drop_database', {}), data={'loads':{},'carriers':{}}, operator_confirmed=False).result.error == 'unknown_tool'; \
+assert dispatch(c('get_load_status', {'load_id':'FX-26-42'}), data={'loads':{},'carriers':{}}, operator_confirmed=False).result.error == 'invalid_load_id_format', 'validation must precede the lookup'; \
+print('refused: missing field, bad format, unknown property, self-confirmed write, unknown tool')"
+
+# V4 — the tool runs end to end, and the write gate refuses then permits
+# (needs OPENAI_API_KEY; one chat call per turn, no embedding unless it falls through).
+python scripts/external_tool.py --question "Where is load FX-2026-000042 right now?"
+python scripts/external_tool.py --question "Book load FX-2026-000211 for carrier CAR-00817."            # refused
+python scripts/external_tool.py --question "Book load FX-2026-000211 for carrier CAR-00817." --confirm  # booked
+
+# V5 — 5 scenarios recorded, each with the spec's mandated block keys (offline).
+grep -c "^## s" outputs/tool_examples.md                                   # 5
+for key in "User question: " "Tool called: " "Input: " "Result: " "Final answer: "; do \
+  printf '%s%s\n' "$key" "$(grep -c "^$key" outputs/tool_examples.md)"; done          # 6 each (s4 runs twice)
+grep -c "^Why tool is better than retrieval: " outputs/tool_examples.md    # 5
+
+# V6 — the MODEL did the routing, and the write never persisted to the committed fixture (offline).
+python -c "import json; d = json.load(open('outputs/tool_results.json')); \
+runs = [r for s in d['scenarios'] for r in s['runs']]; \
+routed = [r['route'] for r in runs]; \
+assert routed.count('tool') == 4 and routed.count('knowledge_base') == 2, routed; \
+assert all(not r['rounds_exhausted'] for r in runs), 'a run hit the tool bound'; \
+gate = [i for r in runs for i in r['invocations'] if i['tool'] == 'book_load']; \
+assert [i['error'] for i in gate] == ['confirmation_required', None], [i['error'] for i in gate]; \
+fixture = json.load(open('data/external/loads.json')); \
+assert fixture['loads']['FX-2026-000211']['status'] == 'posted', 'the committed booking leaked to disk'; \
+print(f'model-chosen routes: {routed.count(\"tool\")} tool, {routed.count(\"knowledge_base\")} knowledge base; fixture still pristine')"
+
+# The full test suite — 324 tests (74 HW1-2 + 52 HW3 + 77 HW4 + 121 HW5), offline, no key or network.
+python -m pytest -q
+```
+
+## Tool contract
+
+Both schemas are module constants and are passed verbatim as the `tools=` payload, so what is
+printed below is what the model receives:
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "get_load_status",
+    "description": "Read the current live state of ONE load ... Do NOT call this for general questions about what the load lifecycle is, what a status means, or how the exchange works — those are answered from the knowledge base, not from live data.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "load_id": {"type": "string", "pattern": "^FX-[0-9]{4}-[0-9]{6}$", "description": "..."}
+      },
+      "required": ["load_id"],
+      "additionalProperties": false
+    }
+  }
+}
+```
+
+`python scripts/external_tool.py --list-tools` prints both in full, offline.
+
+## Tool call example
+
+Reproduced verbatim from the committed run in
+[`outputs/tool_results.json`](outputs/tool_results.json) (scenario s1). The `Result:` line is
+abridged where marked; nothing else is edited.
+
+```bash
+$ python scripts/external_tool.py --question "Where is load FX-2026-000042 right now, and when is it due to arrive?"
+
+Question: Where is load FX-2026-000042 right now, and when is it due to arrive?
+Model: gpt-4.1-mini
+Route: tool (1 round(s))
+
+Tool called: get_load_status
+Input: {"load_id": "FX-2026-000042"}
+Result: {"booking_reference": "BKG-2026-004411", "carrier": {"carrier_id": "CAR-00817", "name": "Nordwind Transport", "status": "active"}, "eta": "2026-08-14T09:30:00+00:00", "last_position_age_s": 214, "ok": true, "position_is_stale": false, "status": "in_transit", ...}
+
+Answer: Load FX-2026-000042 is currently in transit. Its last known position was on the A2 motorway near Konin, Poland, updated about 3.5 minutes ago. The load is due to arrive at its destination in Poznan, Poland, on August 14, 2026, at 09:30 UTC. This information comes from the freight-exchange operations API.
+
+Source: data/external/loads.json (operations API mock)
+```
+
+The model turned `last_position_age_s: 214` into "about 3.5 minutes ago" on its own. That
+conversion is unchecked — see [`docs/homework5/tool-integration-spec.md`](docs/homework5/tool-integration-spec.md)
+§ Known limits.
+
+## Scenarios and results
+
+Six runs across five scenarios, all in [`outputs/tool_examples.md`](outputs/tool_examples.md):
+
+| Scenario | Route the model chose | Outcome |
+|---|---|---|
+| s1 · live state of `FX-2026-000042` | `get_load_status` | in transit, ETA 14 Aug 09:30 UTC, position 214 s old |
+| s2 · a load that does not exist | `get_load_status` | `unknown_load` — relayed honestly, no substituted id |
+| s3 · a malformed identifier | **knowledge base** | the contract's `pattern` filtered it before validation could |
+| s4 · irreversible write, twice | `book_load` ×2 | `confirmation_required`, then `BKG-2026-000211` under `--confirm` |
+| s5 · what "booked" means | **knowledge base** | cited answer from the primer; the tool is the wrong instrument |
+
+## Conclusions — Homework #5
+
+**The routing is what this homework actually demonstrates, and the model got it right four times
+out of four decisions that mattered.** It reached for a tool on both live-state questions and both
+booking attempts, and declined on both questions that were about documented knowledge — with the
+tools sitting on the table each time. Nothing had to inspect the question before the model saw it.
+The two declines are the more interesting half: s5 is the case the assignment's own § 2 asks about
+("коли НЕ викликати"), and s3 was a decline nobody designed for.
+
+**The tool description turned out to be the load-bearing piece of the design, and getting it wrong
+made the gate untestable rather than merely worse.** The first version told the model that
+`book_load` would be refused without operator authorisation. That is true, and it is exactly the
+kind of honest documentation that reads well in a spec — and a well-aligned model responded by not
+calling a tool it expected to fail. The write path silently became unreachable: no tool call, no
+refusal, an empty result to grade. The lesson generalises past this homework. A schema
+`description` is not documentation for a reader, it is a routing instruction for the model, and any
+permission the model can decline to *request* is a permission the system has not actually retained.
+Moving the decision into the tool made the gate both testable and correctly located.
+
+**Validation is necessary and demonstrably not sufficient.** All four clauses the spec names are
+implemented and refuse under test, and one of them — `additionalProperties: false` plus the absence
+of any free-text parameter — is what makes "the tool never takes a raw query from the model" a
+property of the contract instead of a promise. But two measured results bound what that buys. The
+model padded "carrier 817" into `CAR-00817`, a fabrication every syntactic rule accepts, and the
+only thing that caught it was a human being asked to confirm. And the malformed identifier never
+reached the validator at all, because the schema's `pattern` filtered it a layer earlier. Both cut
+the same way: shape checking tells you an argument is *well formed*, never that it is *right*, and
+the confirmation gate is doing more of the safety work than the validators are.
+
+**The static/dynamic split held up, including in the direction that flatters the corpus.** The
+knowledge base states the rule — a load is booked exactly once, confirmation is idempotent — and
+`book_load` enforces that same rule in code against live state; s4 and s5 are one design seen from
+either side. Where the tool is absent the loss is concrete rather than theoretical: s3 fell through
+to retrieval and the user was told the documents were insufficient, which was true, unhelpful, and
+said nothing about the typo that caused it.
+
+---
+
 ## Repository layout
 
 ```
@@ -666,7 +899,8 @@ still decides its context, and no prompt rule repairs a chunk that was never ret
 ├── data/processed/
 │   ├── chunks.jsonl              77 chunks — the Homework #1 deliverable
 │   └── chunks_500.jsonl          116 chunks at 500/100 — chunk-size experiment only
-├── data/eval/test_queries.json   10 evaluation queries + relevance comments (HW2 + HW3 + HW4)
+├── data/eval/test_queries.json   10 evaluation queries + relevance comments (HW2 + HW3 + HW4 + HW5)
+├── data/external/loads.json      mock freight operations API — the Homework #5 external source
 ├── index/
 │   ├── chroma/                   the graded index (77 vectors) + manifest.json
 │   └── chroma_500/               experiment index (116 vectors) — not a deliverable
@@ -678,15 +912,17 @@ still decides its context, and no prompt rule repairs a chunk that was never ret
 │   ├── retrieval_improved.py     Homework #3 — filtered + hybrid search, --compare
 │   ├── run_test_queries.py       evaluation → outputs/retrieval_examples.md
 │   ├── rag_answer.py             Homework #4 — grounded QA, --evaluate / --improvements
+│   ├── external_tool.py          Homework #5 — tool contract, validation, orchestration
 │   └── chunk_size_experiment.py  800/150 vs 500/100 comparison
 ├── notebooks/retrieval.ipynb     the same pipeline, interactively
-├── outputs/                      retrieval examples, comparison, grounded answers + experiments
-├── tests/                        203 tests; no API key or network required
-└── docs/homework1|homework2|homework3|homework4|tasks
+├── outputs/                      retrieval examples, comparison, grounded answers, tool examples
+├── tests/                        324 tests; no API key or network required
+└── docs/homework1|homework2|homework3|homework4|homework5|tasks
 ```
 
 Design notes and the full pipeline specification live in
 [`docs/homework1/`](docs/homework1/README.md) and [`docs/homework2/`](docs/homework2/analysis.md);
 the per-homework design decisions continue in
-[`docs/homework3/retrieval-improvements-spec.md`](docs/homework3/retrieval-improvements-spec.md) and
-[`docs/homework4/generation-spec.md`](docs/homework4/generation-spec.md).
+[`docs/homework3/retrieval-improvements-spec.md`](docs/homework3/retrieval-improvements-spec.md),
+[`docs/homework4/generation-spec.md`](docs/homework4/generation-spec.md) and
+[`docs/homework5/tool-integration-spec.md`](docs/homework5/tool-integration-spec.md).

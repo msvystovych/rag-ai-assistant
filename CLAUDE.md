@@ -3,7 +3,9 @@
 Graded homework series building a RAG system step by step (HW1: knowledge-base preparation,
 HW2: semantic retrieval, HW3: retrieval improvements — `document_type` metadata filtering +
 hybrid BM25/RRF; HW4: grounded answer generation — prompt versions, a relevance floor and
-cited answers; further homeworks will extend this repo). The assignment specs in
+cited answers; HW5: external tool integration — a model-routed tool-calling turn over a mock
+operations API, with a validation boundary and an operator confirmation gate; further homeworks
+will extend this repo). The assignment specs in
 `docs/tasks/` (Ukrainian) are the **arbiter for every graded behavior** — on any conflict between
 code, tests, README, and spec, the spec wins. The repo-root `README.md` is itself a graded
 deliverable and carries a per-homework, per-rubric verification checklist.
@@ -21,15 +23,21 @@ The layout repeats per homework — follow the same pattern when a new homework 
   pipeline (`rag_lib.py`'s HW3 section + `retrieval_improved.py`) — filter/BM25/RRF tuning values
   and their rationale live there; `docs/homework4/generation-spec.md` owns the answer layer
   (`rag_answer.py` + `Settings.answer_model`) — prompt versions, the 0.35 relevance floor, the
-  citation contract and their known limits live there.
+  citation contract and their known limits live there; `docs/homework5/tool-integration-spec.md`
+  owns the tool layer (`external_tool.py` + `data/external/loads.json`) — the tool contract, the
+  validation boundary, the confirmation gate and the bounded orchestration loop live there.
 - `data/raw/` → `scripts/prepare_knowledge_base.py` → `data/processed/chunks.jsonl` →
   `scripts/build_index.py` → `index/chroma/` (+ `manifest.json`) → `scripts/retrieval.py` /
   `scripts/run_test_queries.py` / `scripts/retrieval_improved.py` (HW3: filtered + hybrid search,
   `--compare` baseline-vs-improved) / `scripts/rag_answer.py` (HW4: prompt + LLM over the HW3
-  pipeline, `--evaluate` / `--improvements`) → `outputs/`.
+  pipeline, `--evaluate` / `--improvements`) / `scripts/external_tool.py` (HW5: tool calling over
+  `data/external/loads.json`, falling through to HW4 when the model asks for no tool,
+  `--examples` / `--list-tools`) → `outputs/`.
 - `scripts/rag_lib.py` — shared library: typed settings, embeddings, index handle, plus the HW3
   layer (`infer_document_type`, `Bm25Index`, `rrf_fuse`, `search_improved`). HW4 added exactly one
-  field here (`Settings.answer_model`); all generation logic lives in `rag_answer.py`. Scripts import it
+  field here (`Settings.answer_model`); all generation logic lives in `rag_answer.py`. HW5 added
+  nothing here and modified no HW1–HW4 file: `external_tool.py` is self-contained and imports
+  `rag_answer.answer_question` read-only for its fallback branch. Scripts import it
   as a sibling (`from rag_lib import …`); `notebooks/retrieval.ipynb` is a thin front-end over it.
 - `tests/` — offline pytest suite; `scripts/` is not a package (tests insert it into `sys.path`).
 
@@ -50,6 +58,9 @@ python scripts/retrieval_improved.py --compare --k 3       # baseline-vs-improve
 python scripts/rag_answer.py --query "..." --k 3            # HW4 grounded answer; --json / --prompt-version / --min-score / --no-min-score
 python scripts/rag_answer.py --evaluate --k 3               # 10 grounded answers → outputs/ (two-pass)
 python scripts/rag_answer.py --improvements                 # 3 prompt before/after cases → outputs/ (two-pass)
+python scripts/external_tool.py --list-tools                # HW5 tool contract — offline, no key
+python scripts/external_tool.py --question "..."            # model routes: tool or HW4 fallback; --confirm / --json
+python scripts/external_tool.py --examples                  # 5 tool scenarios → outputs/ (two-pass)
 python scripts/run_test_queries.py --k 3    # evaluation → outputs/ (two-pass; see Pitfalls)
 python scripts/chunk_size_experiment.py --k 3
 python -m pytest -q                         # full suite — offline, no key, no network
@@ -176,8 +187,21 @@ python -m pytest -q                         # full suite — offline, no key, no
   a real run; both `--evaluate` and `--improvements` report which are still empty rather than
   rendering a placeholder. Editing any of them requires re-running to re-render the outputs, or the
   committed Markdown silently disagrees with its own source.
-- **Counts embedded in docs go stale silently.** The README states test counts (currently 203 =
-  74 HW1-2 + 52 HW3 + 77 HW4) and headline metrics; any change that adds tests or re-runs the evaluation
+- **HW5's write tool commits in memory only.** `book_load` mutates the in-process copy of
+  `data/external/loads.json` and never writes it back; the fixture is a fixed input so every
+  `--examples` run starts from the same state. A test pins the file's digest across a booking —
+  never "fix" this by persisting, or the committed examples stop being reproducible.
+- **HW5's examples are two-pass like HW2's, HW3's and HW4's.** `hw5_scenarios` (per-scenario
+  `why_better_than_retrieval` + `comment`) and `hw5_conclusion` in `test_queries.json` are authored
+  by hand after a real `--examples` run; the script names every missing entry on stderr and refuses
+  to render `outputs/tool_examples.md` rather than emitting a placeholder.
+- **A tool `description` is a routing instruction, not documentation.** HW5 measured this: a
+  description that told the model `book_load` would be refused without operator authorisation made
+  the model stop calling it, and the write path became unreachable and ungradeable. Tool text that
+  reads as honest documentation can silently disable a code path — change it only with a real run
+  to confirm the routing still happens.
+- **Counts embedded in docs go stale silently.** The README states test counts (currently 324 =
+  74 HW1-2 + 52 HW3 + 77 HW4 + 121 HW5) and headline metrics; any change that adds tests or re-runs the evaluation
   must re-verify those numbers LAST, after the final code change — the README's own checklist
   commands are the arbiter.
 - Versions: read `requirements.txt` directly (openai 2.x, chromadb 1.x, pytest 9.x — exact pins
