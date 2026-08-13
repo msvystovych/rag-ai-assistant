@@ -1,0 +1,617 @@
+{
+  "embedding_model": "text-embedding-3-small",
+  "answer_model": "gpt-4.1-mini",
+  "prompt_version": "v3",
+  "temperature": 0.0,
+  "min_score": 0.35,
+  "retrieval": "hw3-combined",
+  "k": 3,
+  "aggregates": {
+    "questions": 10,
+    "answered": 9,
+    "refused": 1,
+    "answered_without_context": 0,
+    "context_empty": 1,
+    "answers_with_citation": 9,
+    "citation_rate": 1.0,
+    "fabricated_citations": 0
+  },
+  "records": [
+    {
+      "id": "q01",
+      "category": "direct",
+      "query": "What is a backhaul and why does it matter to a carrier?",
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": "concept-guide",
+      "top_semantic_score": 0.5355725884437561,
+      "context_used": true,
+      "refused": false,
+      "answer": "A backhaul is a return-leg load that stops a vehicle from running empty after delivery. It matters to a carrier because empty running is pure cost, so the availability of backhaul loads is often the strongest single determinant of whether a carrier accepts an outbound load. Additionally, backhaul optimization is a high-value refinement in load matching, as carriers want their return leg found before the outbound leg completes [freight_exchange_domain_primer_chunk_018][freight_exchange_domain_primer_chunk_011].",
+      "cited_chunk_ids": [
+        "freight_exchange_domain_primer_chunk_018",
+        "freight_exchange_domain_primer_chunk_011"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/freight-exchange-domain-primer.md"
+      ],
+      "source_display": "data/raw/freight-exchange-domain-primer.md",
+      "retrieved_chunks_display": "freight_exchange_domain_primer_chunk_018 (semantic 0.536), freight_exchange_domain_primer_chunk_011 (semantic 0.460), freight_exchange_domain_primer_chunk_005 (semantic 0.399)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "freight_exchange_domain_primer_chunk_018",
+          "semantic_score": 0.5355725884437561,
+          "semantic_rank": 1,
+          "rrf_score": 0.03278688524590164,
+          "bm25_rank": 1,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Key Domain Vocabulary"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "freight_exchange_domain_primer_chunk_011",
+          "semantic_score": 0.46032392978668213,
+          "semantic_rank": 2,
+          "rrf_score": 0.03225806451612903,
+          "bm25_rank": 2,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Load Matching Mechanics"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "freight_exchange_domain_primer_chunk_005",
+          "semantic_score": 0.39873963594436646,
+          "semantic_rank": 5,
+          "rrf_score": 0.03076923076923077,
+          "bm25_rank": 5,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Core Actors And Roles"
+        }
+      ],
+      "hw4_comment": "Grounded and cited. The answer fuses chunk_018's definition with chunk_011's backhaul-optimization point and cites both. Worth noting against the Homework #2 comment on this same query: HW2's complaint was that top-1 opens mid-sentence (\"time and handling risk...\") so the definition a reader wants sits at top-3. The generation layer makes that complaint moot \u2014 it reads all of top-k, so an imprecise chunk boundary costs nothing once a model is assembling the answer."
+    },
+    {
+      "id": "q02",
+      "category": "direct",
+      "query": "How does CQRS separate the write model from the read models?",
+      "expected_documents": [
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": "architecture-guide",
+      "top_semantic_score": 0.5816373825073242,
+      "context_used": true,
+      "refused": false,
+      "answer": "CQRS separates the write model from the read models by having the write model focus on accepting state changes with a small, strongly consistent core that enforces correctness, while the read models are denormalized, duplicated freely, and shaped per use case to optimize query performance. This separation allows the write model to handle rare, transactional writes rich in business rules, and the read models to serve constant, tolerant-of-staleness reads in a flat shape that a normalized schema cannot produce cheaply. The read models are independently optimized for different queries, such as lane search or active shipments, without compromising the write model's integrity [cqrs_event_sourcing_for_logistics_chunk_001][cqrs_event_sourcing_for_logistics_chunk_002].",
+      "cited_chunk_ids": [
+        "cqrs_event_sourcing_for_logistics_chunk_001",
+        "cqrs_event_sourcing_for_logistics_chunk_002"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/cqrs-event-sourcing-for-logistics.md"
+      ],
+      "source_display": "data/raw/cqrs-event-sourcing-for-logistics.md",
+      "retrieved_chunks_display": "cqrs_event_sourcing_for_logistics_chunk_002 (semantic 0.582), cqrs_event_sourcing_for_logistics_chunk_001 (semantic 0.581), cqrs_event_sourcing_for_logistics_chunk_017 (semantic 0.531)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_002",
+          "semantic_score": 0.5816373825073242,
+          "semantic_rank": 1,
+          "rrf_score": 0.03278688524590164,
+          "bm25_rank": 1,
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Why CQRS Fits Freight"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_001",
+          "semantic_score": 0.581372857093811,
+          "semantic_rank": 2,
+          "rrf_score": 0.03200204813108039,
+          "bm25_rank": 3,
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Why CQRS Fits Freight"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_017",
+          "semantic_score": 0.5309466123580933,
+          "semantic_rank": 7,
+          "rrf_score": 0.031054405392392875,
+          "bm25_rank": 2,
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Operational Realities"
+        }
+      ],
+      "hw4_comment": "Grounded and cited, drawing on both chunk_001 and chunk_002. This retires the tie HW2 and HW3 both flagged: the two chunks scored 0.582/0.581 and HW2 judged the ordering between them \"effectively arbitrary\", while HW3 noted BM25 broke the tie deliberately rather than by chance. For answer generation the tie never mattered \u2014 both chunks are in context and the answer uses both. Top-1 ordering is a retrieval-grade concern that generation is largely indifferent to."
+    },
+    {
+      "id": "q03",
+      "category": "direct",
+      "query": "What is the strangler-fig pattern for migrating a monolith?",
+      "expected_documents": [
+        "monolith_to_microservices_migration"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": "case-study",
+      "top_semantic_score": 0.6852942705154419,
+      "context_used": true,
+      "refused": false,
+      "answer": "The strangler-fig pattern for migrating a monolith replaces the system incrementally by intercepting calls at its edge and redirecting them capability by capability until nothing routes to the original monolith. It is preferred over a complete rewrite because it keeps the product shippable throughout the migration and allows each increment to be independently reversible. Initially, the facade forwards all calls to the monolith, separating topology changes from behavior changes. Extraction proceeds one capability at a time, lifting both the capability's behavior and its data to avoid creating a distributed monolith with worse latency and no independence [monolith_to_microservices_migration_chunk_010, monolith_to_microservices_migration_chunk_012].",
+      "cited_chunk_ids": [
+        "monolith_to_microservices_migration_chunk_010",
+        "monolith_to_microservices_migration_chunk_012"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/monolith-to-microservices-migration.md"
+      ],
+      "source_display": "data/raw/monolith-to-microservices-migration.md",
+      "retrieved_chunks_display": "monolith_to_microservices_migration_chunk_010 (semantic 0.685), monolith_to_microservices_migration_chunk_012 (semantic 0.625), monolith_to_microservices_migration_chunk_001 (semantic 0.560)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "monolith_to_microservices_migration_chunk_010",
+          "semantic_score": 0.6852942705154419,
+          "semantic_rank": 1,
+          "rrf_score": 0.03278688524590164,
+          "bm25_rank": 1,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Strangler-Fig Execution"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "monolith_to_microservices_migration_chunk_012",
+          "semantic_score": 0.6253635287284851,
+          "semantic_rank": 2,
+          "rrf_score": 0.03200204813108039,
+          "bm25_rank": 3,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Strangler-Fig Execution"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "monolith_to_microservices_migration_chunk_001",
+          "semantic_score": 0.559522271156311,
+          "semantic_rank": 5,
+          "rrf_score": 0.0315136476426799,
+          "bm25_rank": 2,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Introduction"
+        }
+      ],
+      "hw4_comment": "The cleanest result in the set, as it was for HW2 and HW3. Highest retrieval score (0.685), and the answer covers the pattern, its incremental-reversibility rationale, the facade step, and the lift-the-data warning \u2014 cited to the two chunks that carry them. Nothing to fault."
+    },
+    {
+      "id": "q04",
+      "category": "paraphrase",
+      "query": "How do I stop my trucks from driving back empty after a delivery?",
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": "concept-guide",
+      "top_semantic_score": 0.4131818413734436,
+      "context_used": true,
+      "refused": false,
+      "answer": "You can stop your trucks from driving back empty after a delivery by securing a backhaul, which is a return-leg load that stops a vehicle running empty after delivery. Since empty running is pure cost, backhaul availability is often the strongest single determinant of whether a carrier accepts an outbound load [freight_exchange_domain_primer_chunk_018].",
+      "cited_chunk_ids": [
+        "freight_exchange_domain_primer_chunk_018"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/freight-exchange-domain-primer.md"
+      ],
+      "source_display": "data/raw/freight-exchange-domain-primer.md",
+      "retrieved_chunks_display": "freight_exchange_domain_primer_chunk_018 (semantic 0.413), freight_exchange_domain_primer_chunk_004 (semantic 0.339), freight_exchange_domain_primer_chunk_009 (semantic 0.378)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "freight_exchange_domain_primer_chunk_018",
+          "semantic_score": 0.4131818413734436,
+          "semantic_rank": 1,
+          "rrf_score": 0.03278688524590164,
+          "bm25_rank": 1,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Key Domain Vocabulary"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "freight_exchange_domain_primer_chunk_004",
+          "semantic_score": 0.3385411500930786,
+          "semantic_rank": 6,
+          "rrf_score": 0.03128054740957967,
+          "bm25_rank": 2,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Core Actors And Roles"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "freight_exchange_domain_primer_chunk_009",
+          "semantic_score": 0.37818431854248047,
+          "semantic_rank": 4,
+          "rrf_score": 0.031009615384615385,
+          "bm25_rank": 5,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "The Load Lifecycle"
+        }
+      ],
+      "hw4_comment": "Grounded and cited, and the most interesting near-miss in the set. Top semantic is 0.413 \u2014 only 0.063 above the 0.35 floor, and the lowest of any answered question. HW2 measured this exact query at 0.413 and called it \"the vocabulary-mismatch penalty made visible\"; that penalty now sits directly against the fallback threshold. The answer is correct (it names backhaul from chunk_018, the very chunk HW2 said did not lead with the definition), but this is the query that would break first if the floor were raised."
+    },
+    {
+      "id": "q05",
+      "category": "paraphrase",
+      "query": "Why would you keep every change as a permanent record instead of just updating a row in a table?",
+      "expected_documents": [
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": null,
+      "top_semantic_score": 0.41171491146087646,
+      "context_used": true,
+      "refused": false,
+      "answer": "Every change is kept as a permanent record because it preserves the full history of events, which is valuable for dispute resolution, penalty calculations, and performance analysis. Instead of erasing or overwriting data, corrections are expressed as further events, similar to ledger entries, ensuring that the primary record reflects all state transitions. This approach allows every derived view to be provably consistent with the event stream since it is built from the complete history. This method contrasts with conventional rows that only record the current state, losing the detailed evolution of that state [cqrs_event_sourcing_for_logistics_chunk_008].",
+      "cited_chunk_ids": [
+        "cqrs_event_sourcing_for_logistics_chunk_008"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/cqrs-event-sourcing-for-logistics.md"
+      ],
+      "source_display": "data/raw/cqrs-event-sourcing-for-logistics.md",
+      "retrieved_chunks_display": "cqrs_event_sourcing_for_logistics_chunk_015 (semantic 0.354), cqrs_event_sourcing_for_logistics_chunk_008 (semantic 0.361), monolith_to_microservices_migration_chunk_017 (semantic 0.412)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_015",
+          "semantic_score": 0.35395610332489014,
+          "semantic_rank": 5,
+          "rrf_score": 0.0315136476426799,
+          "bm25_rank": 2,
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Projections And Read Models"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_008",
+          "semantic_score": 0.36094796657562256,
+          "semantic_rank": 4,
+          "rrf_score": 0.03125,
+          "bm25_rank": 4,
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Event Sourcing Basics"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "monolith_to_microservices_migration_chunk_017",
+          "semantic_score": 0.41171491146087646,
+          "semantic_rank": 2,
+          "rrf_score": 0.031054405392392875,
+          "bm25_rank": 7,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        }
+      ],
+      "hw4_comment": "Grounded and cited, but the retrieval scores tell the more important story. The floor was cleared at 0.412 by monolith_to_microservices_migration_chunk_017 \u2014 a foreign-document chunk the answer then did not cite. The two chunks that actually answer the question score 0.354 and 0.361, barely 0.004 and 0.011 above the floor. So the gate was opened by a chunk that contributed nothing, and the useful evidence only just qualified. The model's own selection was correct \u2014 it cited cqrs_chunk_008 and ignored the migration chunk sitting in the same context \u2014 which is grounding working exactly as intended on a mixed context."
+    },
+    {
+      "id": "q06",
+      "category": "paraphrase",
+      "query": "How can I release new code without users noticing any interruption?",
+      "expected_documents": [
+        "scaling_and_zero_downtime_operations"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": "playbook",
+      "top_semantic_score": 0.430553674697876,
+      "context_used": true,
+      "refused": false,
+      "answer": "You can achieve zero-downtime deployments by ensuring that consecutive versions of your service can run side by side, serving live traffic simultaneously. Use rollout mechanisms like rolling updates, blue-green, or canary deployments to replace instances gradually or hold a second environment for faster rollback. Make sure API changes are additive, readers tolerate unknown fields, and event schemas evolve without reordering or repurposing existing ones. For database changes, follow the expand-contract sequence: add new structures, write to both old and new, backfill historical data, switch reads, stop writing old structures, and then drop them, with each step independently deployable and reversible. Avoid renaming or retyping columns in place to maintain compatibility during deployment [scaling_and_zero_downtime_operations_chunk_010][scaling_and_zero_downtime_operations_chunk_011].",
+      "cited_chunk_ids": [
+        "scaling_and_zero_downtime_operations_chunk_010",
+        "scaling_and_zero_downtime_operations_chunk_011"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/scaling-and-zero-downtime-operations.md"
+      ],
+      "source_display": "data/raw/scaling-and-zero-downtime-operations.md",
+      "retrieved_chunks_display": "scaling_and_zero_downtime_operations_chunk_011 (semantic 0.402), scaling_and_zero_downtime_operations_chunk_010 (semantic 0.431), scaling_and_zero_downtime_operations_chunk_004 (semantic 0.266)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_011",
+          "semantic_score": 0.4021034240722656,
+          "semantic_rank": 2,
+          "rrf_score": 0.03252247488101534,
+          "bm25_rank": 1,
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Zero-Downtime Deployments"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_010",
+          "semantic_score": 0.430553674697876,
+          "semantic_rank": 1,
+          "rrf_score": 0.032266458495966696,
+          "bm25_rank": 3,
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Zero-Downtime Deployments"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_004",
+          "semantic_score": 0.26583588123321533,
+          "semantic_rank": 9,
+          "rrf_score": 0.030621785881252923,
+          "bm25_rank": 2,
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Horizontal Scaling Patterns"
+        }
+      ],
+      "hw4_comment": "Grounded and cited (chunks 010 and 011), and it exposes a real property of the floor: the retrieved set includes scaling_chunk_004 at 0.266 \u2014 the same value, to displayed precision, as q10's top score, the one that triggers a full refusal (0.26584 against 0.26609; they round alike rather than being equal). The floor is evaluated on the best score in the set, not per chunk, so a sub-threshold chunk rides along into the context whenever a stronger sibling clears the gate. Here it did no harm (the model cited neither) but the mechanism is worth stating plainly."
+    },
+    {
+      "id": "q07",
+      "category": "cross-document",
+      "query": "How is data kept consistent between the old system and the new services during a migration?",
+      "expected_documents": [
+        "monolith_to_microservices_migration",
+        "cqrs_event_sourcing_for_logistics"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": "case-study",
+      "top_semantic_score": 0.6016737222671509,
+      "context_used": true,
+      "refused": false,
+      "answer": "Data consistency between the old system and new services during migration is maintained by having both the monolith and the new service hold data for the same context and ensuring both are correct. Batch replication is unsuitable, so event-driven synchronization over a durable log like Kafka is used, providing ordered, replayable, at-least-once delivery and allowing independent progress without blocking. Additionally, record-level parity verification is employed, where a continuous comparison job reads the same entities from both stores and reports field-level differences, ensuring the read switch only occurs when no mismatches are detected across a full business cycle [monolith_to_microservices_migration_chunk_014][monolith_to_microservices_migration_chunk_017][monolith_to_microservices_migration_chunk_002].",
+      "cited_chunk_ids": [
+        "monolith_to_microservices_migration_chunk_014",
+        "monolith_to_microservices_migration_chunk_017",
+        "monolith_to_microservices_migration_chunk_002"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/monolith-to-microservices-migration.md"
+      ],
+      "source_display": "data/raw/monolith-to-microservices-migration.md",
+      "retrieved_chunks_display": "monolith_to_microservices_migration_chunk_014 (semantic 0.595), monolith_to_microservices_migration_chunk_017 (semantic 0.602), monolith_to_microservices_migration_chunk_002 (semantic 0.509)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "monolith_to_microservices_migration_chunk_014",
+          "semantic_score": 0.5950443744659424,
+          "semantic_rank": 2,
+          "rrf_score": 0.03200204813108039,
+          "bm25_rank": 3,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "monolith_to_microservices_migration_chunk_017",
+          "semantic_score": 0.6016737222671509,
+          "semantic_rank": 1,
+          "rrf_score": 0.031544957774465976,
+          "bm25_rank": 6,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "monolith_to_microservices_migration_chunk_002",
+          "semantic_score": 0.5092436075210571,
+          "semantic_rank": 7,
+          "rrf_score": 0.03131881575727918,
+          "bm25_rank": 1,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Introduction"
+        }
+      ],
+      "hw4_comment": "Grounded and cited to both chunks, and this is where generation adds something retrieval could not. The answer separates two distinct mechanisms \u2014 event-driven synchronization over a durable log, and record-level parity verification gating the read switch \u2014 and attributes each to its own chunk. HW3 noted the case-study filter formally excludes the second expected document (CQRS); that exclusion still costs nothing, because the migration document answers the question completely."
+    },
+    {
+      "id": "q08",
+      "category": "cross-document",
+      "query": "What has to be true for the platform to handle 5,000 requests per second?",
+      "expected_documents": [
+        "scaling_and_zero_downtime_operations",
+        "freight_exchange_domain_primer"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": "playbook",
+      "top_semantic_score": 0.6462070941925049,
+      "context_used": true,
+      "refused": false,
+      "answer": "The platform must decompose the aggregate of 5,000 requests per second into at least three distinct workloads with different shapes and scale, size, and degrade them independently. Capacity planning should not rely on the average request rate alone, as it will under-provision peaks and over-provision troughs. Autoscaling policies must be workload-specific rather than platform-wide to avoid starving workloads with the tightest latency budgets. Observability should report golden signals per workload class, and latency must be analyzed as a distribution to capture tail latencies experienced by users. Event-driven components require queue-oriented signals, including consumer lag expressed in both time and message count [scaling_and_zero_downtime_operations_chunk_001, scaling_and_zero_downtime_operations_chunk_003, scaling_and_zero_downtime_operations_chunk_016].",
+      "cited_chunk_ids": [
+        "scaling_and_zero_downtime_operations_chunk_001",
+        "scaling_and_zero_downtime_operations_chunk_003",
+        "scaling_and_zero_downtime_operations_chunk_016"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/scaling-and-zero-downtime-operations.md"
+      ],
+      "source_display": "data/raw/scaling-and-zero-downtime-operations.md",
+      "retrieved_chunks_display": "scaling_and_zero_downtime_operations_chunk_016 (semantic 0.629), scaling_and_zero_downtime_operations_chunk_001 (semantic 0.646), scaling_and_zero_downtime_operations_chunk_003 (semantic 0.622)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_016",
+          "semantic_score": 0.6290982365608215,
+          "semantic_rank": 2,
+          "rrf_score": 0.03252247488101534,
+          "bm25_rank": 1,
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "Observability"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_001",
+          "semantic_score": 0.6462070941925049,
+          "semantic_rank": 1,
+          "rrf_score": 0.032266458495966696,
+          "bm25_rank": 3,
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "The Load Profile"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "scaling_and_zero_downtime_operations_chunk_003",
+          "semantic_score": 0.6222736239433289,
+          "semantic_rank": 3,
+          "rrf_score": 0.03200204813108039,
+          "bm25_rank": 2,
+          "source_file": "data/raw/scaling-and-zero-downtime-operations.md",
+          "document_id": "scaling_and_zero_downtime_operations",
+          "section": "The Load Profile"
+        }
+      ],
+      "hw4_comment": "Grounded and cited to three chunks. The honest caveat HW2 and HW3 both recorded still applies underneath: the 0.646 top score is inflated by the breadcrumb repeating \"5,000 Requests per Second\" from the document title in every chunk. Generation neither fixes nor worsens that \u2014 it inherits whichever chunks the inflation surfaced. The answer itself is a fair synthesis of workload decomposition, per-workload autoscaling, and tail-latency observability."
+    },
+    {
+      "id": "q09",
+      "category": "cross-document",
+      "query": "Who confirms that a delivery actually happened, and what does that confirmation trigger?",
+      "expected_documents": [
+        "freight_exchange_domain_primer"
+      ],
+      "verdict": "hit \u2014 top-1 is from an expected document",
+      "inferred_document_type": "concept-guide",
+      "top_semantic_score": 0.4833142161369324,
+      "context_used": true,
+      "refused": false,
+      "answer": "The consignee confirms that a delivery actually happened by providing proof of delivery (POD), which is typically a photograph or signature capture from the driver's application. This confirmation triggers invoicing and settlement processes [freight_exchange_domain_primer_chunk_018][freight_exchange_domain_primer_chunk_008][freight_exchange_domain_primer_chunk_009].",
+      "cited_chunk_ids": [
+        "freight_exchange_domain_primer_chunk_018",
+        "freight_exchange_domain_primer_chunk_008",
+        "freight_exchange_domain_primer_chunk_009"
+      ],
+      "fabricated_citations": [],
+      "source_files": [
+        "data/raw/freight-exchange-domain-primer.md"
+      ],
+      "source_display": "data/raw/freight-exchange-domain-primer.md",
+      "retrieved_chunks_display": "freight_exchange_domain_primer_chunk_018 (semantic 0.405), freight_exchange_domain_primer_chunk_008 (semantic 0.396), freight_exchange_domain_primer_chunk_009 (semantic 0.483)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "freight_exchange_domain_primer_chunk_018",
+          "semantic_score": 0.4048267602920532,
+          "semantic_rank": 2,
+          "rrf_score": 0.03225806451612903,
+          "bm25_rank": 2,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "Key Domain Vocabulary"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "freight_exchange_domain_primer_chunk_008",
+          "semantic_score": 0.39596259593963623,
+          "semantic_rank": 4,
+          "rrf_score": 0.032018442622950824,
+          "bm25_rank": 1,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "The Load Lifecycle"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "freight_exchange_domain_primer_chunk_009",
+          "semantic_score": 0.4833142161369324,
+          "semantic_rank": 1,
+          "rrf_score": 0.032018442622950824,
+          "bm25_rank": 4,
+          "source_file": "data/raw/freight-exchange-domain-primer.md",
+          "document_id": "freight_exchange_domain_primer",
+          "section": "The Load Lifecycle"
+        }
+      ],
+      "hw4_comment": "The clearest demonstration in the set that answer generation is not just retrieval with prose on top. HW2's verdict on this query was that \"the POD-to-settlement link is retrievable but not cleanly isolated in one chunk\" \u2014 no single chunk carried the whole answer. The model assembled it from three, and produced the two-sentence answer HW2 said the corpus could not hand over directly: the consignee confirms via POD, and that confirmation triggers invoicing and settlement. All three chunks cited."
+    },
+    {
+      "id": "q10",
+      "category": "out-of-corpus",
+      "query": "What is the best way to fine-tune a large language model on a custom dataset?",
+      "expected_documents": [],
+      "verdict": "out-of-corpus \u2014 judged on score separation, not on document match",
+      "inferred_document_type": null,
+      "top_semantic_score": 0.2661098837852478,
+      "context_used": false,
+      "refused": true,
+      "answer": "I do not have enough information in the available documents to answer this question.",
+      "cited_chunk_ids": [],
+      "fabricated_citations": [],
+      "source_files": [],
+      "source_display": "(none \u2014 no chunk cleared the relevance floor)",
+      "retrieved_chunks_display": "monolith_to_microservices_migration_chunk_013 (semantic 0.245), cqrs_event_sourcing_for_logistics_chunk_002 (semantic 0.222), monolith_to_microservices_migration_chunk_014 (semantic 0.266)",
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "chunk_id": "monolith_to_microservices_migration_chunk_013",
+          "semantic_score": 0.2445540428161621,
+          "semantic_rank": 4,
+          "rrf_score": 0.032018442622950824,
+          "bm25_rank": 1,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Strangler-Fig Execution"
+        },
+        {
+          "rank": 2,
+          "chunk_id": "cqrs_event_sourcing_for_logistics_chunk_002",
+          "semantic_score": 0.22245216369628906,
+          "semantic_rank": 10,
+          "rrf_score": 0.029910714285714284,
+          "bm25_rank": 4,
+          "source_file": "data/raw/cqrs-event-sourcing-for-logistics.md",
+          "document_id": "cqrs_event_sourcing_for_logistics",
+          "section": "Why CQRS Fits Freight"
+        },
+        {
+          "rank": 3,
+          "chunk_id": "monolith_to_microservices_migration_chunk_014",
+          "semantic_score": 0.2661098837852478,
+          "semantic_rank": 1,
+          "rrf_score": 0.01639344262295082,
+          "bm25_rank": null,
+          "source_file": "data/raw/monolith-to-microservices-migration.md",
+          "document_id": "monolith_to_microservices_migration",
+          "section": "Keeping Data In Sync Mid-Migration"
+        }
+      ],
+      "hw4_comment": "Correct refusal, and the single most valuable result in the set. Top semantic is 0.266, below the 0.35 floor, so the context was passed empty and the model returned the refusal sentence with no citation and no source. This closes the thread HW2 opened and HW3 deferred: HW2 recorded that \"a pure retrieval layer has no way to say 'I don't know'\" and that a floor near 0.35 would be needed before this fed an LLM. It now does, and it works. The counterfactual is measured rather than asserted \u2014 case-1 in outputs/prompt_improvements.md runs this same question through the naive v1 prompt and gets a confident eight-step tutorial on LoRA and Hugging Face, none of it from the corpus."
+    }
+  ]
+}

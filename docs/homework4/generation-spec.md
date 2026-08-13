@@ -39,10 +39,13 @@ Assignment spec:
   semantic rank-1 chunk out of a `k=3` result, and the gate then judges the question on cosine
   values drawn from lower down the semantic ranking than the ones 0.35 was derived from. The
   direction of the error is toward **false refusal** — the safe direction, but a failure all the
-  same, and the 0.063 margin below leaves little room for it. This is diagnosable from the
-  committed artifact without re-running anything: `outputs/rag_answers_results.json` records
+  same. **This is measured, not hypothetical.** `outputs/rag_answers_results.json` records
   `semantic_rank` for every retrieved chunk, so a record whose chunks include no `semantic_rank: 1`
-  is one where the gate saw a displaced statistic. Recalibrating properly would mean measuring the
+  is one where the gate judged a displaced statistic. Exactly one of the ten does: **q05**, whose
+  returned chunks are semantic ranks 5, 4 and 2 — the semantic rank-1 chunk never reached the
+  context. q05 is also the narrowest margin in the set (+0.062 over the floor), so the one query
+  where the statistic was displaced is the one closest to being refused. The two effects compound
+  on the same query rather than cancelling. Recalibrating properly would mean measuring the
   fused-top-k cosine distribution, which needs a run this homework does not budget for.
 - **The floor's margin is thin.** 0.35 sits only 0.063 below the lowest measured in-corpus top-1
   (0.413). A genuinely answerable question whose best chunk lands just under the floor would be
@@ -75,6 +78,35 @@ Assignment spec:
   it may over-weight.
 - **Single-turn only.** Each question is independent; a follow-up re-retrieves from scratch with no
   memory of what was already shown.
+- **The weak-context half of the fallback is measured, but only outside the committed run.** The
+  rubric row covers an *empty or weak* context. Within `--evaluate` only the empty half occurs,
+  because the floor runs first: every question that reached the model had a context it was willing
+  to use, and no in-corpus question was refused. The weak half was therefore measured separately,
+  with the floor disabled:
+
+  ```
+  $ python scripts/rag_answer.py --query "What is the best way to fine-tune a large language \
+      model on a custom dataset?" --k 3 --no-min-score
+
+  Context: 3 chunk(s) (top semantic 0.266, floor disabled)
+  Retrieved chunks: monolith_..._chunk_013 (0.244), cqrs_..._chunk_002 (0.222),
+                    monolith_..._chunk_014 (0.266)
+  Answer: I do not have enough information in the available documents to answer this question.
+  Citations: (none)
+  ```
+
+  Three genuinely off-topic chunks reached the model and it declined to use them, so the prompt
+  rule refuses a **non-empty** insufficient context on its own. The two gates are independently
+  effective, not merely independently described. This run is not part of the committed evaluation
+  (it would change the graded aggregates), which is why it is recorded here.
+
+- **That run also exposed a defect, now fixed.** With the floor disabled the refusal was correct but
+  the `Source:` line named both retrieved documents. `source_files()` falls back to every retrieved
+  chunk when the model cites nothing — reasonable for an uncited *answer*, exactly wrong for a
+  *refusal*. With the floor on, every refusal had also had an empty context, so the earlier gate hid
+  the case. Refusals now report no source whether the context was withheld or merely declined, and
+  both branches are pinned by tests. The committed artifacts never carried the defect (q10's context
+  was empty there), but the evidence run for the bullet above did.
 
 ## What is deliberately not built
 

@@ -3,11 +3,13 @@
 Homework #1 — preparing a knowledge base for a retrieval-augmented chatbot.
 Homework #2 — a basic semantic retrieval layer over that knowledge base.
 Homework #3 — an improved retrieval pipeline: metadata filtering + hybrid BM25/RRF search.
+Homework #4 — grounded answer generation: the model answers only from retrieved context, with citations.
 
 Assignment specs:
 [`docs/tasks/Домашнє завдання №1 — Підготовка knowl`](docs/tasks/Домашнє%20завдання%20№1%20—%20Підготовка%20knowl) ·
 [`docs/tasks/Домашнє завдання №2 — Базовий semantic retrieval layer`](docs/tasks/Домашнє%20завдання%20№2%20—%20Базовий%20semantic%20retrieval%20layer) ·
-[`docs/tasks/Домашнє завдання №3 — Покращення retrieval pipeline`](docs/tasks/Домашнє%20завдання%20№3%20—%20Покращення%20retrieval%20pipeline)
+[`docs/tasks/Домашнє завдання №3 — Покращення retrieval pipeline`](docs/tasks/Домашнє%20завдання%20№3%20—%20Покращення%20retrieval%20pipeline) ·
+[`docs/tasks/Домашнє завдання №4 — Генерація відповіді поверх retrieval`](docs/tasks/Домашнє%20завдання%20№4%20—%20Генерація%20відповіді%20поверх%20retrieval)
 
 ```
 data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py → Chroma index
@@ -15,6 +17,8 @@ data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py 
                     retrieved chunks ← top-k cosine search ← retrieval.py ← user query
                                                                                   ↓
       fused chunks ← document_type filter + BM25 ‖ semantic, RRF ← retrieval_improved.py
+                                                                                  ↓
+  grounded answer + [chunk_id] citations ← LLM ← prompt + relevance floor ← rag_answer.py
 ```
 
 ## Subject area
@@ -83,9 +87,17 @@ python scripts/chunk_size_experiment.py --k 3
 #    --no-hybrid disable each technique. --compare reads the committed HW2 baseline read-only.
 python scripts/retrieval_improved.py --query "How do we release code without interruption?" --k 3
 python scripts/retrieval_improved.py --compare --k 3
+
+# 7. Homework #4 — grounded answers over the retrieved context.
+#    The relevance floor (--min-score, default 0.35) empties the context when nothing clears it;
+#    --no-min-score leaves the refusal entirely to the prompt. --prompt-version v1|v2|v3 selects
+#    the template, so any before/after in outputs/prompt_improvements.md is reproducible.
+python scripts/rag_answer.py --query "What is a backhaul and why does it matter to a carrier?" --k 3
+python scripts/rag_answer.py --evaluate --k 3
+python scripts/rag_answer.py --improvements
 ```
 
-Step 1 needs only Python ≥ 3.9. Steps 2–5 need the packages in `requirements.txt`; verified on
+Step 1 needs only Python ≥ 3.9. Steps 2–7 need the packages in `requirements.txt`; verified on
 Python 3.14.6. `notebooks/retrieval.ipynb` is the same pipeline interactively — it imports
 `scripts/rag_lib.py` rather than reimplementing anything.
 
@@ -169,7 +181,7 @@ print('direct', round(sum(top('direct'))/3, 3), '| paraphrase', round(sum(top('p
 '| in-corpus floor', round(min(ic), 3), '| out-of-corpus', round(top('out-of-corpus')[0], 3))"
 #   direct 0.601 | paraphrase 0.423 | in-corpus floor 0.413 | out-of-corpus 0.266
 
-# The full test suite — 126 tests (74 for HW1-2 + 52 for HW3), offline, no key or network.
+# The full test suite — 203 tests (74 for HW1-2 + 52 for HW3 + 77 for HW4), offline, no key or network.
 python -m pytest -q
 ```
 
@@ -403,6 +415,250 @@ classifier — recorded, with the other limits, in
 
 ---
 
+# Homework #4 — grounded answer generation
+
+The first layer that answers rather than retrieves: `question → retrieve top-k → build prompt →
+call the LLM → grounded answer with citations`. Retrieval is the Homework #3 combined pipeline, so
+this homework adds only the generation half.
+
+Two independent gates produce the "I don't know" behaviour, and they answer different questions:
+
+1. **A relevance floor** (`--min-score`, default 0.35) reads the best cosine score in the retrieved
+   set. Below it the context is passed to the model **empty** — the floor decides whether anything
+   retrieved is close enough to be worth showing at all.
+2. **The prompt's own refusal rule** decides whether the context it did receive actually contains
+   the answer. A floor cannot tell that three on-topic chunks all miss the specific fact asked for;
+   a prompt rule never sees an empty context.
+
+0.35 is not a fresh guess — it is the number [Homework #2's analysis](docs/homework2/analysis.md)
+derived from measurement (out-of-corpus top 0.266 vs in-corpus floor 0.413) and then deferred, as
+did Homework #3. Design decisions and known limits:
+[`docs/homework4/generation-spec.md`](docs/homework4/generation-spec.md).
+
+## How to verify this homework (grading checklist)
+
+All § 3 deliverables are tracked in git: [`scripts/rag_answer.py`](scripts/rag_answer.py) ·
+[`outputs/rag_answers_examples.md`](outputs/rag_answers_examples.md) ·
+[`outputs/prompt_improvements.md`](outputs/prompt_improvements.md) · the prompt template (below and
+in the script) · this README — plus `outputs/rag_answers_results.json`, the machine-readable backing
+for the examples (the HW4 counterpart of HW2's `retrieval_results.json`; not §3-listed, kept because
+the checks below verify against it). Everything except V2's live run works **offline — no API key
+required**.
+
+| Rubric criterion (§ 4) | Pts | Evidence | Check |
+|---|---|---|---|
+| Prompt template with a grounded-answering rule | 10 | [Prompt template](#prompt-template) · `PROMPT_VERSIONS["v3"]` in [`scripts/rag_answer.py`](scripts/rag_answer.py) — only-from-context rule, verbatim refusal sentence, citation requirement | V1 |
+| QA pipeline implemented (retrieval → answer) | 15 | [`scripts/rag_answer.py`](scripts/rag_answer.py) — `--query` / `--evaluate` / `--improvements`; all **10** questions run end to end (9 answered, 1 correctly refused) | V2, V3 |
+| Citation or source in every answer | 10 | [`outputs/rag_answers_examples.md`](outputs/rag_answers_examples.md): **9 of 9** answered questions carry inline `[chunk_id]` markers **and** a `Source:` line, **0** fabricated. q10 is the refusal and deliberately carries neither — see the note below the table | V4 |
+| Fallback behaviour on empty/weak context | 5 | q10 in [`outputs/rag_answers_examples.md`](outputs/rag_answers_examples.md): top 0.266 < 0.35 → context empty → refusal, no citation, no source | V5 |
+| 2–3 prompt improvements with explanation | 10 | [`outputs/prompt_improvements.md`](outputs/prompt_improvements.md): **3** cases, each a real before/after over identical retrieved chunks | V6 |
+
+The spec's § 2 asks for four *kinds* of test question. The question set is inherited from Homework
+#2, whose `category` values were chosen for a retrieval evaluation, so the two taxonomies do not
+line up name-for-name. The mapping is:
+
+| § 2 required kind | Questions | Evidence it is that kind |
+|---|---|---|
+| Simple question whose answer is definitely in context | q01, q02, q03 (`direct`) | top scores 0.536 / 0.582 / 0.685 — the three highest in the set |
+| Reformulated question | q04, q05, q06 (`paraphrase`) | deliberately avoid the corpus's own wording; q04 drops the word "backhaul" entirely |
+| Context insufficient → fallback | q10 (`out-of-corpus`) | top 0.266 < 0.35 floor → context passed empty → refusal, 0 citations, no source |
+| Retrieval returns a **weak** chunk | q05, q06 | q05: the floor was cleared at 0.412 by a *foreign-document* chunk the answer then did not cite, while the two chunks that answered scored 0.354 and 0.361 (+0.004 / +0.011 over the floor). q06: `scaling_..._chunk_004` at 0.2658 — *below* the floor — rode into the context on a stronger sibling's score, and the answer correctly ignored it |
+
+The weak-chunk row is the one the inherited `category` labels do not name, so it is spelled out
+here rather than left to be reconstructed. Both cases are analysed in their `Comment:` blocks in
+[`outputs/rag_answers_examples.md`](outputs/rag_answers_examples.md).
+
+Within `--evaluate` the floor always fires first, so only the *empty* half of the fallback occurs
+there. The *weak* half was measured separately with the floor disabled — three genuinely off-topic
+chunks reached the model and it refused anyway, so the prompt rule stands on its own:
+
+```bash
+$ python scripts/rag_answer.py --query "What is the best way to fine-tune a large language model on a custom dataset?" --k 3 --no-min-score
+
+Context: 3 chunk(s) (top semantic 0.266, floor disabled)
+Retrieved chunks: monolith_..._chunk_013 (semantic 0.244), cqrs_..._chunk_002 (semantic 0.222), monolith_..._chunk_014 (semantic 0.266)
+Answer: I do not have enough information in the available documents to answer this question.
+Citations: (none)
+```
+
+That run is deliberately outside the committed evaluation — including it would change the graded
+aggregates. It also surfaced a real defect, since fixed and pinned by tests: a refusal over a
+*non-empty* context was still naming its retrieved documents as sources. Details in
+[`docs/homework4/generation-spec.md`](docs/homework4/generation-spec.md) § Known limits.
+
+**On rubric row 3 and the refusal.** The spec asks for a citation in *every* answer (§ 4) and also
+requires the model to refuse rather than invent when context is insufficient (§ 4) — and its own
+example refusal (§ 5) carries no source. A refusal therefore cannot satisfy the citation row
+literally. This implementation reports the citation rate over *answered* questions (9 of 9) and
+deliberately emits no source for a withheld context, on the grounds that a chunk the model never
+saw is not a source. Read strictly, that is 9 of 10.
+
+```bash
+# V1 — the shipped prompt carries all four required rules (offline, no key).
+python -c "import sys; sys.path.insert(0,'scripts'); from rag_answer import PROMPT_VERSIONS as P, \
+INSUFFICIENT_CONTEXT_ANSWER as R; v = P['v3'].user_template; \
+assert 'ONLY the context below' in v and 'Do not add facts from general knowledge' in v; \
+assert R in v and 'square brackets' in v and P['v3'].system; \
+print('v3 carries: only-from-context, no-outside-knowledge, refusal sentence, citation rule')"
+
+# V2 — the pipeline answers a single question end to end, with a citation and a source
+# (needs OPENAI_API_KEY; one embedding + one chat call).
+python scripts/rag_answer.py --query "What is a backhaul and why does it matter to a carrier?" --k 3
+
+# V3 — 10 questions recorded, each with the spec's mandated block keys (offline).
+grep -c "^Question: " outputs/rag_answers_examples.md              # 10
+for key in "Retrieved chunks: " "Answer: " "Source: " "Comment: "; do \
+  printf '%s%s\n' "$key" "$(grep -c "^$key" outputs/rag_answers_examples.md)"; done   # 10 each
+
+# V4 — every answered question carries a real citation and none invents one (offline, self-asserting).
+python -c "import json; d = json.load(open('outputs/rag_answers_results.json')); a = d['aggregates']; \
+r = d['records']; \
+assert a['answers_with_citation'] == a['answered'] == 9, a; \
+assert a['fabricated_citations'] == 0, 'a cited id was never in the context'; \
+assert a['answered_without_context'] == 0, 'an answer was produced from an empty context'; \
+supplied = lambda x: {c['chunk_id'] for c in x['retrieved_chunks']}; \
+assert all(set(x['cited_chunk_ids']) <= supplied(x) for x in r), 'citation outside the context'; \
+print(f\"citation rate {a['citation_rate']:.2f} ({a['answers_with_citation']}/{a['answered']}) | \
+fabricated {a['fabricated_citations']} | answered from empty context {a['answered_without_context']}\")"
+
+# V5 — the fallback fires on the out-of-corpus question and ONLY there (offline).
+python -c "import json; r = json.load(open('outputs/rag_answers_results.json'))['records']; \
+ref = [x for x in r if x['refused']]; \
+assert [x['id'] for x in ref] == ['q10'], f'unexpected refusals: {[x[\"id\"] for x in ref]}'; \
+q = ref[0]; \
+assert not q['context_used'] and q['top_semantic_score'] < 0.35 and not q['cited_chunk_ids']; \
+assert not q['source_files'], 'a refusal must name no source'; \
+print(f\"q10 refused: top {q['top_semantic_score']:.3f} < floor 0.35, context empty, 0 citations\")"
+
+# V6 — 3 before/after cases, each showing a real answer from both prompt versions (offline).
+grep -c "^## case-" outputs/prompt_improvements.md                 # 3
+grep -c "^### Result" outputs/prompt_improvements.md               # 3
+
+# The full test suite — 203 tests (74 HW1-2 + 52 HW3 + 77 HW4), offline, no key or network.
+python -m pytest -q
+```
+
+## Prompt template
+
+The shipped template is `v3`. All three versions stay runnable (`--prompt-version v1|v2|v3`) so
+every before/after in `outputs/prompt_improvements.md` can be reproduced rather than taken on trust.
+
+```
+System: You are a documentation assistant for a freight-exchange engineering knowledge base.
+        You answer strictly from the source material you are given, and you never fall back
+        on general knowledge.
+
+Answer the engineer's question using ONLY the context below.
+
+Rules:
+1. Use only the provided context. Do not add facts from general knowledge, even when you are
+   confident they are correct.
+2. If the context does not contain enough information to answer, reply with exactly this
+   sentence and nothing else:
+   "I do not have enough information in the available documents to answer this question."
+3. Cite the chunk every claim came from, inline, in square brackets — for example
+   [freight_exchange_domain_primer_chunk_018]. Use the ids exactly as they appear in the
+   context headers. Never cite an id that is not in the context.
+4. Answer in at most five sentences. Do not restate the question.
+
+Context:
+{context}
+
+Question:
+{question}
+
+Answer:
+```
+
+Each context entry is headed by the id the model must cite, so the citation format is shown rather
+than only described:
+
+```
+[freight_exchange_domain_primer_chunk_018]
+source_file: data/raw/freight-exchange-domain-primer.md
+section: Key Domain Vocabulary
+<chunk text>
+```
+
+## Answer example
+
+```bash
+$ python scripts/rag_answer.py --query "Who confirms that a delivery actually happened, and what does that confirmation trigger?" --k 3
+
+Question: Who confirms that a delivery actually happened, and what does that confirmation trigger?
+Prompt: v3 | Model: gpt-4.1-mini
+Context: 3 chunk(s) (top semantic 0.483, floor 0.35)
+
+Retrieved chunks: freight_exchange_domain_primer_chunk_018 (semantic 0.405), freight_exchange_domain_primer_chunk_008 (semantic 0.396), freight_exchange_domain_primer_chunk_009 (semantic 0.483)
+
+Answer: The consignee confirms that a delivery actually happened by providing proof of delivery (POD), which is typically a photograph or signature capture from the driver's application. This confirmation triggers invoicing and settlement processes [freight_exchange_domain_primer_chunk_018][freight_exchange_domain_primer_chunk_008][freight_exchange_domain_primer_chunk_009].
+
+Source: data/raw/freight-exchange-domain-primer.md
+Citations: freight_exchange_domain_primer_chunk_018, freight_exchange_domain_primer_chunk_008, freight_exchange_domain_primer_chunk_009
+```
+
+This is the query Homework #2 could not resolve cleanly — its recorded judgement was that "the
+POD-to-settlement link is retrievable but not cleanly isolated in one chunk". The answer layer
+assembled it from three.
+
+## Answers and prompt improvements
+
+Full set: [`outputs/rag_answers_examples.md`](outputs/rag_answers_examples.md) (10 questions) and
+[`outputs/prompt_improvements.md`](outputs/prompt_improvements.md) (3 before/after cases).
+
+| Measure | Value |
+|---|---|
+| Questions | 10 |
+| Answered from context | 9 |
+| Refused ("not enough information") | 1 |
+| Answered despite an empty context (hallucination) | **0** |
+| Answers carrying at least one citation | **9 of 9** |
+| Citations naming a chunk that was never supplied | **0** |
+
+## Conclusions — Homework #4
+
+**The prompt is what produces the refusal, and that is measured rather than asserted.** Case-1 of
+[`outputs/prompt_improvements.md`](outputs/prompt_improvements.md) runs the out-of-corpus question
+through the assignment's own starting prompt over the *identical* retrieved chunks and gets a
+confident eight-step tutorial on LoRA, Hugging Face and gradient clipping — not one word of it from
+a logistics corpus. The same question under `v2` returns the refusal sentence. Retrieval was held
+constant, so the hallucination was entirely the prompt's doing.
+
+**Case-3 is the honest counterweight.** It was designed to catch the naive prompt drifting on q05,
+the hardest in-corpus question — and the naive prompt did not drift. Its answer was substantively
+grounded; what it lacked was any citation, so a reader could not verify a correct answer. A naive
+prompt is not reliably wrong, it is *unreliably right*, which is worse: one well-behaved sample
+would have predicted the opposite of case-1. That is the argument for keeping all three prompts
+runnable instead of quoting them in a document.
+
+**The floor is thinner than the aggregate suggests.** It fired exactly once, on q10 (0.266 against
+0.35), and no in-corpus question was refused. But three of the nine answered questions sit within
+0.07 of refusal, and q05 is the instructive one: it cleared the floor at 0.412 on a
+*foreign-document* chunk the answer then did not cite, while the two chunks that actually answered
+scored 0.354 and 0.361 — 0.004 and 0.011 above the line. The gate was opened by a chunk that
+contributed nothing.
+
+Two of the nine answered questions sit within 0.07 of refusal (q05 at +0.062, q04 at +0.063) and a
+third, q06, within 0.09 (+0.081). q05 is also where a second, independent weakness shows up, and the
+two compound on the same query.
+The floor is calibrated on the *semantic top-1* but reads the *RRF-fused top-k*, which are not the
+same statistic — under fusion a chunk found by both branches outranks a chunk the semantic branch
+ranked first but BM25 never surfaced. The committed `semantic_rank` field makes this auditable, and
+exactly one of the ten questions shows it: q05's returned chunks are semantic ranks **5, 4 and 2** —
+the semantic rank-1 chunk never reached the context at all. So the query with the narrowest margin
+is also the only one where the gate judged a displaced statistic. The floor earned its place on the
+single query it was built for, and it is one recalibration away from costing a correct answer
+([`docs/homework4/generation-spec.md`](docs/homework4/generation-spec.md) § Known limits).
+
+**Several Homework #2 defects stopped being defects.** HW2 faulted q01's top-1 for opening
+mid-sentence so the definition landed at top-3; generation reads all of top-k, so the chunk boundary
+no longer matters. HW2 and HW3 both worried at q02's 0.582-vs-0.581 tie — HW3 spent BM25 on breaking
+it — and both chunks are in context anyway, so the ordering was irrelevant. What does survive is
+everything about *which* chunks arrive rather than in what order: q08's breadcrumb-inflated score
+still decides its context, and no prompt rule repairs a chunk that was never retrieved.
+
+---
+
 ## Repository layout
 
 ```
@@ -410,7 +666,7 @@ classifier — recorded, with the other limits, in
 ├── data/processed/
 │   ├── chunks.jsonl              77 chunks — the Homework #1 deliverable
 │   └── chunks_500.jsonl          116 chunks at 500/100 — chunk-size experiment only
-├── data/eval/test_queries.json   10 evaluation queries + relevance comments (HW2 + HW3)
+├── data/eval/test_queries.json   10 evaluation queries + relevance comments (HW2 + HW3 + HW4)
 ├── index/
 │   ├── chroma/                   the graded index (77 vectors) + manifest.json
 │   └── chroma_500/               experiment index (116 vectors) — not a deliverable
@@ -421,12 +677,16 @@ classifier — recorded, with the other limits, in
 │   ├── retrieval.py              top-k semantic search (CLI)
 │   ├── retrieval_improved.py     Homework #3 — filtered + hybrid search, --compare
 │   ├── run_test_queries.py       evaluation → outputs/retrieval_examples.md
+│   ├── rag_answer.py             Homework #4 — grounded QA, --evaluate / --improvements
 │   └── chunk_size_experiment.py  800/150 vs 500/100 comparison
 ├── notebooks/retrieval.ipynb     the same pipeline, interactively
-├── outputs/                      retrieval examples, comparison + experiment results
-├── tests/                        126 tests; no API key or network required
-└── docs/homework1|homework2|homework3|tasks
+├── outputs/                      retrieval examples, comparison, grounded answers + experiments
+├── tests/                        203 tests; no API key or network required
+└── docs/homework1|homework2|homework3|homework4|tasks
 ```
 
 Design notes and the full pipeline specification live in
-[`docs/homework1/`](docs/homework1/README.md) and [`docs/homework2/`](docs/homework2/analysis.md).
+[`docs/homework1/`](docs/homework1/README.md) and [`docs/homework2/`](docs/homework2/analysis.md);
+the per-homework design decisions continue in
+[`docs/homework3/retrieval-improvements-spec.md`](docs/homework3/retrieval-improvements-spec.md) and
+[`docs/homework4/generation-spec.md`](docs/homework4/generation-spec.md).

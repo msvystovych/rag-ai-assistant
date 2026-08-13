@@ -681,6 +681,50 @@ class TestSourceFiles:
             "every retrieved source is reported, in rank order, with duplicates collapsed"
         )
 
+    def test_a_refusal_over_a_NON_empty_context_still_names_no_source(
+        self, settings: Settings
+    ) -> None:
+        # Found by running --no-min-score against the out-of-corpus question: the floor was off, so
+        # the model DID receive three off-topic chunks and refused anyway. The uncited fallback then
+        # credited both source documents for an answer that explicitly declined to use them.
+        client = FakeAnswerClient(INSUFFICIENT_CONTEXT_ANSWER)
+
+        result = generate(
+            "unanswerable",
+            [
+                make_hit("migration_chunk_013", semantic_score=0.244, rank=1),
+                make_hit("cqrs_chunk_002", semantic_score=0.222, rank=2, source_file="data/raw/cqrs.md"),
+            ],
+            settings,
+            client=client,
+            min_score=None,
+        )
+
+        assert result.context_used, "the floor is disabled, so the chunks did reach the model"
+        assert result.refused
+        assert result.cited_chunk_ids == ()
+        assert result.source_files() == (), (
+            "a refusal names no source even when it was shown a context"
+        )
+
+    def test_an_uncited_answer_still_falls_back_to_every_retrieved_source(
+        self, settings: Settings
+    ) -> None:
+        # The counterpart to the test above: the fallback must survive for real answers, otherwise
+        # suppressing it for refusals would silently strip sources from uncited good answers too.
+        client = FakeAnswerClient("A backhaul is a return leg load.")
+
+        result = generate(
+            "q",
+            [make_hit("primer_chunk_001"), make_hit("cqrs_chunk_001", rank=2, source_file="data/raw/cqrs.md")],
+            settings,
+            client=client,
+            min_score=None,
+        )
+
+        assert not result.refused
+        assert result.source_files() == ("data/raw/primer.md", "data/raw/cqrs.md")
+
     def test_a_withheld_context_reports_no_source_anywhere(
         self, settings: Settings
     ) -> None:
@@ -839,6 +883,13 @@ class TestEvaluate:
         assert payload["answer_model"] == "gpt-4.1-mini"
         assert payload["aggregates"]["questions"] == 5
         assert len(payload["records"]) == 5
+        # semantic_rank is what makes the floor's calibration mismatch auditable after the run;
+        # the design doc's known-limits section points a reader at this field by name.
+        assert all(
+            "semantic_rank" in chunk
+            for record in payload["records"]
+            for chunk in record["retrieved_chunks"]
+        )
 
     def test_missing_comments_are_reported_not_rendered_as_placeholders(
         self,

@@ -233,13 +233,24 @@ class GroundedAnswer:
     def source_files(self) -> tuple[str, ...]:
         """Distinct source files behind the answer — cited chunks when the model cited any.
 
-        Empty when the context was withheld: a chunk the model never saw is not a source, and
-        reporting one would attribute a refusal to documents that had no part in it.
+        Two cases yield nothing, for the same reason: a document that had no part in the answer is
+        not a source of it.
+
+        - The context was withheld, so the model never saw the chunks at all.
+        - The model was shown a context and declined to answer from it. The uncited fallback below
+          assumes an answer drew on the whole context without saying which part; a refusal is the
+          one case where that assumption is exactly wrong. Reaching this required disabling the
+          floor (`--no-min-score`), which is why it survived the first pass — with the floor on,
+          every refusal so far has also had an empty context.
         """
         if not self.context_used:
             return ()
         cited = set(self.cited_chunk_ids)
-        chosen = [hit for hit in self.hits if hit.chunk_id in cited] or list(self.hits)
+        chosen = [hit for hit in self.hits if hit.chunk_id in cited]
+        if not chosen:
+            if self.refused:
+                return ()
+            chosen = list(self.hits)
         files: list[str] = []
         for hit in chosen:
             source = str(hit.metadata.get("source_file", "?"))
@@ -771,6 +782,11 @@ def run_evaluate(
                         "rank": hit.rank,
                         "chunk_id": hit.chunk_id,
                         "semantic_score": hit.semantic_score,
+                        # Recorded so the relevance floor stays auditable after the fact: the
+                        # floor is calibrated on the semantic top-1 but reads the fused top-k, so
+                        # a record with no semantic_rank 1 is one where it judged a displaced
+                        # statistic (docs/homework4/generation-spec.md § Known limits).
+                        "semantic_rank": hit.semantic_rank,
                         "rrf_score": hit.rrf_score,
                         "bm25_rank": hit.bm25_rank,
                         "source_file": hit.metadata.get("source_file", "?"),
