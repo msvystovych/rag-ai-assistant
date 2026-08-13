@@ -1,0 +1,175 @@
+{
+  "api": "freight-exchange operations API (mock)",
+  "snapshot_at": "2026-08-13T06:00:00+00:00",
+  "note": "Stands in for the live operations API behind scripts/external_tool.py. This is the dynamic state a static knowledge base cannot hold: which lifecycle state a specific load is in, which carrier holds it, and where the vehicle was last seen. The six statuses are the load lifecycle named in data/raw/freight-exchange-domain-primer.md; booking invariants are the ones data/raw/cqrs-event-sourcing-for-logistics.md states for the BookLoad command.",
+  "carriers": {
+    "CAR-00817": {
+      "carrier_id": "CAR-00817",
+      "name": "Nordwind Transport",
+      "country": "DE",
+      "status": "active",
+      "fleet_size": 34
+    },
+    "CAR-00412": {
+      "carrier_id": "CAR-00412",
+      "name": "Vistula Freight",
+      "country": "PL",
+      "status": "active",
+      "fleet_size": 12
+    },
+    "CAR-00933": {
+      "carrier_id": "CAR-00933",
+      "name": "Iberia Cargo Lines",
+      "country": "ES",
+      "status": "active",
+      "fleet_size": 58
+    },
+    "CAR-00555": {
+      "carrier_id": "CAR-00555",
+      "name": "Baltic Haul",
+      "country": "LT",
+      "status": "suspended",
+      "fleet_size": 7
+    }
+  },
+  "loads": {
+    "FX-2026-000042": {
+      "load_id": "FX-2026-000042",
+      "status": "in_transit",
+      "origin": "Rotterdam, NL",
+      "destination": "Poznan, PL",
+      "equipment": "curtainsider",
+      "weight_kg": 18400,
+      "pickup_window": {
+        "from": "2026-08-12T06:00:00+00:00",
+        "to": "2026-08-12T14:00:00+00:00"
+      },
+      "carrier_id": "CAR-00817",
+      "booking_reference": "BKG-2026-004411",
+      "eta": "2026-08-14T09:30:00+00:00",
+      "last_position": {
+        "place": "A2 motorway near Konin, PL",
+        "lat": 52.223,
+        "lon": 18.251
+      },
+      "last_position_age_s": 214,
+      "updated_at": "2026-08-13T05:56:26+00:00"
+    },
+    "FX-2026-000105": {
+      "load_id": "FX-2026-000105",
+      "status": "booked",
+      "origin": "Hamburg, DE",
+      "destination": "Lyon, FR",
+      "equipment": "reefer",
+      "weight_kg": 21750,
+      "pickup_window": {
+        "from": "2026-08-15T05:00:00+00:00",
+        "to": "2026-08-15T11:00:00+00:00"
+      },
+      "carrier_id": "CAR-00412",
+      "booking_reference": "BKG-2026-004498",
+      "eta": null,
+      "last_position": null,
+      "last_position_age_s": null,
+      "updated_at": "2026-08-12T16:41:03+00:00"
+    },
+    "FX-2026-000211": {
+      "load_id": "FX-2026-000211",
+      "status": "posted",
+      "origin": "Antwerp, BE",
+      "destination": "Milan, IT",
+      "equipment": "curtainsider",
+      "weight_kg": 15200,
+      "pickup_window": {
+        "from": "2026-08-16T06:00:00+00:00",
+        "to": "2026-08-16T18:00:00+00:00"
+      },
+      "carrier_id": null,
+      "booking_reference": null,
+      "eta": null,
+      "last_position": null,
+      "last_position_age_s": null,
+      "updated_at": "2026-08-13T04:12:55+00:00"
+    },
+    "FX-2026-000318": {
+      "load_id": "FX-2026-000318",
+      "status": "matched",
+      "origin": "Gdansk, PL",
+      "destination": "Rotterdam, NL",
+      "equipment": "tautliner",
+      "weight_kg": 23900,
+      "pickup_window": {
+        "from": "2026-08-17T07:00:00+00:00",
+        "to": "2026-08-17T15:00:00+00:00"
+      },
+      "carrier_id": null,
+      "booking_reference": null,
+      "eta": null,
+      "last_position": null,
+      "last_position_age_s": null,
+      "updated_at": "2026-08-13T05:20:11+00:00"
+    },
+    "FX-2026-000407": {
+      "load_id": "FX-2026-000407",
+      "status": "delivered",
+      "origin": "Barcelona, ES",
+      "destination": "Toulouse, FR",
+      "equipment": "box",
+      "weight_kg": 9600,
+      "pickup_window": {
+        "from": "2026-08-10T06:00:00+00:00",
+        "to": "2026-08-10T12:00:00+00:00"
+      },
+      "carrier_id": "CAR-00933",
+      "booking_reference": "BKG-2026-004302",
+      "eta": "2026-08-11T14:00:00+00:00",
+      "last_position": {
+        "place": "Toulouse consignee dock, FR",
+        "lat": 43.604,
+        "lon": 1.444
+      },
+      "last_position_age_s": 151980,
+      "updated_at": "2026-08-11T13:47:40+00:00"
+    },
+    "FX-2026-000512": {
+      "load_id": "FX-2026-000512",
+      "status": "settled",
+      "origin": "Prague, CZ",
+      "destination": "Vienna, AT",
+      "equipment": "curtainsider",
+      "weight_kg": 12300,
+      "pickup_window": {
+        "from": "2026-06-22T05:00:00+00:00",
+        "to": "2026-06-22T11:00:00+00:00"
+      },
+      "carrier_id": "CAR-00817",
+      "booking_reference": "BKG-2026-003877",
+      "eta": "2026-06-23T10:00:00+00:00",
+      "last_position": {
+        "place": "Vienna consignee dock, AT",
+        "lat": 48.209,
+        "lon": 16.373
+      },
+      "last_position_age_s": 4429200,
+      "updated_at": "2026-07-28T09:02:17+00:00"
+    },
+    "FX-2026-000633": {
+      "load_id": "FX-2026-000633",
+      "status": "posted",
+      "origin": "Bremen, DE",
+      "destination": "Copenhagen, DK",
+      "equipment": "reefer",
+      "weight_kg": 17050,
+      "pickup_window": {
+        "from": "2026-08-18T04:00:00+00:00",
+        "to": "2026-08-18T10:00:00+00:00"
+      },
+      "carrier_id": null,
+      "booking_reference": null,
+      "eta": null,
+      "last_position": null,
+      "last_position_age_s": null,
+      "updated_at": "2026-08-13T05:44:09+00:00"
+    }
+  }
+}
