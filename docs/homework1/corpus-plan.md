@@ -1,12 +1,13 @@
 # Corpus plan — the seven source documents
 
 **This is the actual work.** Nothing downstream can run until at least three of these exist in
-`data/raw/`. None are written yet.
+`data/raw/`. The core four exist in `data/raw/`. The corpus drops the extension three.
 
-Seven documents are designed, inside the spec's 3–10 band, split into a **core four** — author
-these first, they alone give full rubric coverage with one document per `document_type` — and an
-**extension three**, added when time allows. The pipeline is deterministic and re-runnable, so
-extending the corpus later is a one-command re-chunk.
+This plan designs seven documents, inside the spec's 3–10 band. It splits them into a **core four**
+and an **extension three**. Author the core four first: they alone give full rubric coverage, with
+one document per `document_type`. The plan held the **extension three** for a later pass,
+when time allowed. Nobody authored them, so the corpus ships without them. The pipeline is deterministic and re-runnable, so a later corpus extension
+costs one re-chunk command.
 
 **Read § Sanitization below before writing a word.** Every document lists the approved figures it
 may use; nothing else about a real platform may appear.
@@ -89,11 +90,11 @@ grep -rniE '\b(we|our|us) (use|used|run|ran|have|had|built|deploy|store)\b' data
 grep -rnoE '\b(19|20)[0-9]{2}\b' data/raw/
 ```
 
-Every hit in #1 must match a row in the allowlist. Every hit in #2 must be zero. Hits in #3 and #4
-must be rewritten or removed.
+Every hit in #1 must match a row in the allowlist. Every hit in #2 must be zero. Rewrite or remove
+every hit in #3 and #4.
 
-The knowledge base contains no personal data by construction — tenure dates are intentionally
-unused.
+The knowledge base contains no personal data by construction, because this repository intentionally
+uses no tenure dates.
 
 ---
 
@@ -101,18 +102,20 @@ unused.
 
 | # | File | Type | Tier | Target words | Est. chunks | Status |
 |---|---|---|---|---|---|---|
-| 1 | `freight-exchange-domain-primer.md` | concept-guide | core | 1,300–1,600 | 13–16 | ❌ not written |
-| 2 | `cqrs-event-sourcing-for-logistics.md` | architecture-guide | core | 1,500–1,900 | 15–19 | ❌ not written |
-| 3 | `monolith-to-microservices-migration.md` | case-study | core | 1,500–2,000 | 15–20 | ❌ not written |
-| 4 | `scaling-and-zero-downtime-operations.md` | playbook | core | 1,300–1,700 | 13–17 | ❌ not written |
-| 5 | `real-time-freight-visibility.md` | concept-guide | extension | 1,200–1,500 | 12–15 | ❌ not written |
-| 6 | `kafka-vehicle-telemetry-streaming.md` | architecture-guide | extension | 1,400–1,800 | 14–18 | ❌ not written |
-| 7 | `freight-payments-automation.md` | concept-guide | extension | 1,100–1,400 | 11–14 | ❌ not written |
+| 1 | `freight-exchange-domain-primer.md` | concept-guide | core | 1,300–1,600 | 13–16 | ✅ written |
+| 2 | `cqrs-event-sourcing-for-logistics.md` | architecture-guide | core | 1,500–1,900 | 15–19 | ✅ written |
+| 3 | `monolith-to-microservices-migration.md` | case-study | core | 1,500–2,000 | 15–20 | ✅ written |
+| 4 | `scaling-and-zero-downtime-operations.md` | playbook | core | 1,300–1,700 | 13–17 | ✅ written |
+| 5 | `real-time-freight-visibility.md` | concept-guide | extension | 1,200–1,500 | 12–15 | 🚫 dropped |
+| 6 | `kafka-vehicle-telemetry-streaming.md` | architecture-guide | extension | 1,400–1,800 | 14–18 | 🚫 dropped |
+| 7 | `freight-payments-automation.md` | concept-guide | extension | 1,100–1,400 | 11–14 | 🚫 dropped |
 | | **Core four** | | | **5,600–7,200** | **56–72** | |
 | | **All seven** | | | **9,300–11,900** | **93–119** | |
 
-**Sizing rule:** at chunk_size 800 / overlap 150 the net yield is ~650 chars per chunk, and English
-technical prose runs ~6.5 chars per word — so **chunks ≈ words ÷ 10**.
+**The corpus ships with the core four.** This plan drops rows 5–7. They are not pending work.
+
+**Sizing rule:** at chunk_size 800 / overlap 150 the net yield is ~650 chars per chunk. English
+technical prose runs ~6.5 chars per word. So **chunks ≈ words ÷ 10**.
 
 **Minimum viable corpus:** `spec:25` requires three documents and `spec:72` awards its 5 points for
 "Файли присутні, читаються" — no rubric row mentions length. Three documents at ~900 words each
@@ -175,7 +178,7 @@ Read this before writing the first document — it shapes how the outlines below
 **"CQRS and Event Sourcing in a Freight Platform"** · architecture-guide · ~1,500–1,900 words
 
 - **Why CQRS fits freight** — read/write asymmetry: few bookings, massive search and tracking reads
-- **Command side** — load/booking aggregates, invariants, validation before events are emitted
+- **Command side** — load/booking aggregates, invariants, validation before the aggregate emits events
 - **Event sourcing basics** — event store as source of truth, replay, immutability
 - **Designing logistics events** — `LoadPosted`, `LoadBooked`, `PositionUpdated`; naming, granularity, versioning
 - **Projections and read models** — denormalized search indexes; eventual consistency and UX
@@ -188,7 +191,7 @@ Read this before writing the first document — it shapes how the outlines below
 **"Migrating a Logistics Monolith to Microservices"** · case-study · ~1,500–2,000 words
 
 > **Framing note — put this in the document's introduction:** the narrative is a generic composite
-> of standard strangler-fig practice, anchored only by the approved end-state figures (~40
+> of standard strangler-fig practice. Only the approved end-state figures anchor it (~40
 > services, zero-downtime sync, monolith decommissioned). Mirror this in the submission README's
 > no-proprietary note.
 
@@ -207,7 +210,7 @@ Read this before writing the first document — it shapes how the outlines below
 
 - **The load profile** — spiky search traffic, steady telemetry firehose, business-hours booking peaks
 - **Horizontal scaling patterns** — stateless services, autoscaling signals; the datastore is the limit, not the app tier
-- **Caching strategy** — search results, reference data, position snapshots; invalidation via events
+- **Caching strategy** — search results, reference data, position snapshots; invalidation through events
 - **Zero-downtime deployments** — rolling / blue-green, backward-compatible changes, expand-contract migrations
 - **Resilience** — timeouts, retry budgets, circuit breakers that fail visibly; bulkheading tracking from booking
 - **Observability** — golden signals, consumer-lag and telemetry-freshness SLOs, alerting on staleness
@@ -219,7 +222,8 @@ Read this before writing the first document — it shapes how the outlines below
 
 ## Extension three
 
-Author later. These unlock queries on visibility, telemetry, and payments.
+**Dropped.** No one authored these three documents. They would unlock queries on visibility,
+telemetry, and payments.
 
 ### 5. `real-time-freight-visibility.md`
 **"Real-Time Freight Visibility: From GPS Ping to Customer ETA"** · concept-guide · ~1,200–1,500 words
@@ -290,7 +294,7 @@ this vocabulary.
 | Term | Meaning |
 |---|---|
 | **CQRS** | Command Query Responsibility Segregation — separate write model (commands) from read models (queries / projections). |
-| **Event Sourcing** | Persisting every state change as an immutable event; current state is derived by replay. |
+| **Event Sourcing** | Persisting every state change as an immutable event; a replay derives the current state. |
 | **Projection / read model** | A denormalized view rebuilt from the event stream, optimized for queries. |
 | **Strangler-fig migration** | Incrementally extracting capabilities from a monolith behind a routing facade until the monolith can be decommissioned. |
 | **Anti-corruption layer** | A translation boundary preventing a legacy model from leaking into a new service's domain. |
