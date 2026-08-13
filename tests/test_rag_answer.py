@@ -998,6 +998,39 @@ class TestImprovements:
         assert "first answer" in rendered
         assert "second answer" in rendered
 
+    def test_each_rendered_prompt_block_is_the_whole_prompt(
+        self, index: Settings, queries_file: Path, tmp_path: Path
+    ) -> None:
+        output = tmp_path / "improvements.md"
+
+        run_improvements(
+            index,
+            queries_file,
+            output,
+            3,
+            min_score=None,
+            client=FakeAnswerClient("Answer."),
+        )
+
+        rendered = output.read_text(encoding="utf-8")
+        for case in rag_answer.IMPROVEMENT_CASES:
+            for version in (case.before, case.after):
+                block = rag_answer.prompt_display(rag_answer.PROMPT_VERSIONS[version])
+                assert block in rendered, (
+                    f"{version}'s block must carry its system message, or a block headed "
+                    "'adds a role' shows no role and cannot reproduce the answer beside it"
+                )
+
+    def test_v1_renders_without_a_system_line(self) -> None:
+        template = rag_answer.PROMPT_VERSIONS["v1"]
+
+        rendered = rag_answer.prompt_display(template)
+
+        assert rendered == template.user_template
+        assert not rendered.startswith("System:"), (
+            "v1 deliberately has no system message; inventing one destroys the baseline"
+        )
+
     def test_a_case_whose_query_is_absent_is_a_diagnostic_error(
         self, index: Settings, queries_file: Path, tmp_path: Path
     ) -> None:

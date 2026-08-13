@@ -858,6 +858,17 @@ def run_evaluate(
     return 0
 
 
+def prompt_display(template: PromptTemplate) -> str:
+    """The whole prompt the model receives, for a before/after block.
+
+    Rendering `user_template` alone dropped the system message, so a block headed
+    "adds a role" showed no role and could not reproduce the answer printed beside it.
+    """
+    if not template.system:
+        return template.user_template
+    return f"System: {template.system}\n\n{template.user_template}"
+
+
 def render_improvements_markdown(
     cases: list[dict[str, Any]], *, settings: Settings, k: int
 ) -> str:
@@ -896,7 +907,7 @@ def render_improvements_markdown(
                 f"### Before — `{case['before']}` ({PROMPT_VERSIONS[case['before']].summary})",
                 "",
                 "```",
-                PROMPT_VERSIONS[case["before"]].user_template,
+                prompt_display(PROMPT_VERSIONS[case["before"]]),
                 "```",
                 "",
                 f"Answer: {case['before_answer']}",
@@ -911,7 +922,7 @@ def render_improvements_markdown(
                 f"### After — `{case['after']}` ({PROMPT_VERSIONS[case['after']].summary})",
                 "",
                 "```",
-                PROMPT_VERSIONS[case["after"]].user_template,
+                prompt_display(PROMPT_VERSIONS[case["after"]]),
                 "```",
                 "",
                 f"Answer: {case['after_answer']}",

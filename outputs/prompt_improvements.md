@@ -54,6 +54,8 @@ Citations: (none)
 ### After — `v2` (adds a role, the only-from-context rule, and an explicit refusal sentence)
 
 ```
+System: You are a documentation assistant for a freight-exchange engineering knowledge base.
+
 Answer the engineer's question using only the provided context.
 If the context does not contain enough information to answer, reply with exactly this sentence and nothing else:
 "I do not have enough information in the available documents to answer this question."
@@ -88,6 +90,8 @@ Retrieved chunks: freight_exchange_domain_primer_chunk_018 (semantic 0.536), fre
 ### Before — `v2` (adds a role, the only-from-context rule, and an explicit refusal sentence)
 
 ```
+System: You are a documentation assistant for a freight-exchange engineering knowledge base.
+
 Answer the engineer's question using only the provided context.
 If the context does not contain enough information to answer, reply with exactly this sentence and nothing else:
 "I do not have enough information in the available documents to answer this question."
@@ -108,6 +112,8 @@ Citations: (none)
 ### After — `v3` (adds mandatory inline chunk_id citation and bans outside knowledge)
 
 ```
+System: You are a documentation assistant for a freight-exchange engineering knowledge base. You answer strictly from the source material you are given, and you never fall back on general knowledge.
+
 Answer the engineer's question using ONLY the context below.
 
 Rules:
@@ -159,6 +165,8 @@ Citations: (none)
 ### After — `v3` (adds mandatory inline chunk_id citation and bans outside knowledge)
 
 ```
+System: You are a documentation assistant for a freight-exchange engineering knowledge base. You answer strictly from the source material you are given, and you never fall back on general knowledge.
+
 Answer the engineer's question using ONLY the context below.
 
 Rules:
