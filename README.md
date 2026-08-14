@@ -5,13 +5,15 @@ Homework #2 — a basic semantic retrieval layer over that knowledge base.
 Homework #3 — an improved retrieval pipeline: metadata filtering + hybrid BM25/RRF search.
 Homework #4 — grounded answer generation: the model answers only from retrieved context, with citations.
 Homework #5 — external tool integration: the model calls a live operations API, or falls back to the knowledge base.
+Homework #6 — first agentic structure: a rule-based router picks a route, commits to a plan, and runs it step by step.
 
 Assignment specs:
 [`docs/tasks/Домашнє завдання №1 — Підготовка knowl`](docs/tasks/Домашнє%20завдання%20№1%20—%20Підготовка%20knowl) ·
 [`docs/tasks/Домашнє завдання №2 — Базовий semantic retrieval layer`](docs/tasks/Домашнє%20завдання%20№2%20—%20Базовий%20semantic%20retrieval%20layer) ·
 [`docs/tasks/Домашнє завдання №3 — Покращення retrieval pipeline`](docs/tasks/Домашнє%20завдання%20№3%20—%20Покращення%20retrieval%20pipeline) ·
 [`docs/tasks/Домашнє завдання №4 — Генерація відповіді поверх retrieval`](docs/tasks/Домашнє%20завдання%20№4%20—%20Генерація%20відповіді%20поверх%20retrieval) ·
-[`docs/tasks/Домашнє завдання №5 — Інтеграція зовнішнього tool або джерела`](docs/tasks/Домашнє%20завдання%20№5%20—%20Інтеграція%20зовнішнього%20tool%20або%20джерела)
+[`docs/tasks/Домашнє завдання №5 — Інтеграція зовнішнього tool або джерела`](docs/tasks/Домашнє%20завдання%20№5%20—%20Інтеграція%20зовнішнього%20tool%20або%20джерела) ·
+[`docs/tasks/Домашнє завдання №6 — Перша agentic-структура`](docs/tasks/Домашнє%20завдання%20№6%20—%20Перша%20agentic-структура)
 
 ```
 data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py → Chroma index
@@ -23,6 +25,8 @@ data/raw/*.md → prepare_knowledge_base.py → chunks.jsonl → build_index.py 
   grounded answer + [chunk_id] citations ← LLM ← prompt + relevance floor ← rag_answer.py
                                                                                   ↑
         no tool call ── model chooses ── tool call → validate → operations API → external_tool.py
+                                                                                  ↓
+   final answer + state ← step → observation → next step ← rule-based route ← agent_flow.py
 ```
 
 ## Subject area
@@ -115,9 +119,18 @@ python scripts/external_tool.py --list-tools
 python scripts/external_tool.py --question "Where is load FX-2026-000042 right now?"
 python scripts/external_tool.py --question "Book load FX-2026-000211 for carrier CAR-00817." --confirm
 python scripts/external_tool.py --examples
+
+# 9. Homework #6 — the deterministic agent workflow. No model and no key anywhere in this one:
+#    a rule-based router picks one of four routes, the route commits to a plan, and each step's
+#    observation is recorded in state that later steps read. --describe prints routes/tools/state.
+python scripts/agent_flow.py --describe
+python scripts/agent_flow.py --question "What does the status matched mean?"
+python scripts/agent_flow.py --question "Book load FX-2026-000211 for carrier CAR-00817." --confirm
+python scripts/agent_flow.py --examples
 ```
 
-Step 1 needs only Python ≥ 3.9. Steps 2–8 need the packages in `requirements.txt`. The recorded
+Step 1 needs only Python ≥ 3.9. Steps 2–9 need the packages in `requirements.txt`, and step 9
+needs no API key. The recorded
 verification ran on Python 3.14.6. `notebooks/retrieval.ipynb` runs the same pipeline
 interactively. It imports `scripts/rag_lib.py`, and it reimplements nothing.
 
@@ -227,7 +240,7 @@ print('direct', round(sum(top('direct'))/3, 3), '| paraphrase', round(sum(top('p
 '| in-corpus floor', round(min(ic), 3), '| out-of-corpus', round(top('out-of-corpus')[0], 3))"
 #   direct 0.601 | paraphrase 0.423 | in-corpus floor 0.413 | out-of-corpus 0.266
 
-# The full test suite — 326 tests (74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5), offline, no key or network.
+# The full test suite — 521 tests (74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5 + 195 HW6), offline, no key or network.
 python -m pytest -q
 ```
 
@@ -607,7 +620,7 @@ print(f\"q10 refused: top {q['top_semantic_score']:.3f} < floor 0.35, context em
 grep -c "^## case-" outputs/prompt_improvements.md                 # 3
 grep -c "^### Result" outputs/prompt_improvements.md               # 3
 
-# The full test suite — 326 tests (74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5), offline, no key or network.
+# The full test suite — 521 tests (74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5 + 195 HW6), offline, no key or network.
 python -m pytest -q
 ```
 
@@ -859,7 +872,7 @@ fixture = json.load(open('data/external/loads.json')); \
 assert fixture['loads']['FX-2026-000211']['status'] == 'posted', 'the committed booking leaked to disk'; \
 print(f'model-chosen routes: {routed.count(\"tool\")} tool, {routed.count(\"knowledge_base\")} knowledge base; fixture still pristine')"
 
-# The full test suite — 326 tests (74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5), offline, no key or network.
+# The full test suite — 521 tests (74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5 + 195 HW6), offline, no key or network.
 python -m pytest -q
 ```
 
@@ -971,6 +984,365 @@ problem.
 
 ---
 
+# Homework #6 — first agentic structure
+
+This layer is the first that **plans**. Homework #5 gave the model two tools and let it choose;
+here a rule-based router chooses, commits to an ordered plan, and runs the plan one step at a time,
+with each step's observation recorded in state that later steps read:
+`user goal → route → plan → step → observation → state update → next step → final answer`.
+
+**Nothing in it calls a model.** § 2 says deterministic rule-based routing is fine for this
+homework; this layer extends that to the whole flow, so the router, the three tools *and* the answer
+composition are all rules. Three things follow. The committed artifact reproduces **byte for byte** —
+two consecutive runs produce identical files, which no earlier homework's artifact can claim. The
+tests drive the shipped flow instead of a fake of it. And the whole homework runs with **no
+`OPENAI_API_KEY` and no network**, so every check below is reproducible without a credential. What
+that costs is in
+[`docs/homework6/agent-flow-spec.md`](docs/homework6/agent-flow-spec.md) § Known limits, and it is
+not small.
+
+## Use case and scenario
+
+**Domain:** the same freight-exchange logistics platform as Homework #1–#5.
+**Use case:** a *dispatcher's console* — one assistant that answers platform questions from the
+documentation, reports live load state from the operations API, and commits a load to a carrier.
+
+**The scenario it is built around.** A dispatcher is working a load board on a Tuesday morning. She
+does not know what `matched` means, so she asks, and gets the definition from the platform primer.
+She then asks where `FX-2026-000042` is, and gets its live status, carrier, ETA and last known
+position. Satisfied, she moves to the load she actually has to place and types
+`Book load FX-2026-000211 for carrier CAR-00817.` The assistant looks the load up, confirms it is
+still open — and refuses, because booking is irreversible and she has not authorised it. She
+re-issues the same request with `--confirm`, and only then is the load committed. Along the way she
+mistypes an identifier once, and is told so rather than quietly answered about something else.
+
+Those are the four routes, in the order a real session hits them.
+
+## Workflow schema
+
+```
+                                  user question
+                                        │
+                                        ▼
+                          ┌───────────────────────────┐
+                          │  Router — 9 ordered rules │   no model, no network
+                          │  R1 … R9, first match wins│
+                          └───────────────────────────┘
+          ┌────────────────┬─────────────┴──────────────┬────────────────┐
+          ▼                ▼                            ▼                ▼
+   knowledge_base     load_status                    booking       clarification
+          │                │                            │                │
+          ▼                ▼                            ▼                ▼
+ search_knowledge_   get_load_status              get_load_status     ask_user
+    base  (tool)          (tool)                      (tool)          (gate)
+          │                │                            │                │
+          ▼                ▼                            ▼                ▼
+     observation      observation                  observation      observation
+          │                │                            │                │
+          │                │              state ────────┘                │
+          │                │                │                            │
+          │                │                ▼                            │
+          │                │      check_authorisation (gate)             │
+          │                │      load open?   operator confirmed?       │
+          │                │           │                  │              │
+          │                │        no │ halt         yes │              │
+          │                │           │                  ▼              │
+          │                │           │            book_load (tool)     │
+          │                │           │                  │              │
+          │                │           │                  ▼              │
+          │                │           │             observation         │
+          │                │           │                  │              │
+          └────────────────┴───────────┴──────────────────┴──────────────┘
+                                        │
+                                        ▼
+                             final answer  +  final state
+```
+
+Routing is by rules only. Identifiers are found by regex — the *same* patterns
+`scripts/external_tool.py` validates with, unanchored so they match mid-sentence — intent by small
+word sets, and corpus vocabulary by Homework #3's `infer_document_type`. The full nine-rule table,
+and the reason for their order, is in
+[`docs/homework6/agent-flow-spec.md`](docs/homework6/agent-flow-spec.md) § The router's rules.
+
+## Routes and steps
+
+Four routes, five step types. § 2 asks for *at least two routes **or** three steps*; the booking
+route alone meets the step threshold and the four routes meet the other, so neither reading is left
+to interpretation.
+
+| Route | Plan | Steps | When the router picks it |
+|---|---|---|---|
+| `knowledge_base` | `search_knowledge_base` | 1 | the question asks what something *means*, or uses the corpus's own vocabulary |
+| `load_status` | `get_load_status` | 1 | a well-formed load identifier appears in the question |
+| `booking` | `get_load_status` → `check_authorisation` → `book_load` | 3 | a booking verb **and** one load id **and** one carrier id |
+| `clarification` | `ask_user` | 1 | an identifier is missing, mistyped or ambiguous, or nothing matched |
+
+A **tool step** consults a source outside the workflow. A **gate step** reads only what the state
+already holds — `check_authorisation` and `ask_user` are gates, and the rendered trace says so
+rather than counting them as tool calls.
+
+**The booking route is where state stops being decorative.** Step 3 is reachable only through step
+2, and step 2 is a verdict on step 1's *recorded observation*: it refuses unless the status it read
+is one of the open lifecycle states **and** the human passed `--confirm`. A refused observation
+halts the plan, so `book_load` is never called speculatively.
+
+## Tools
+
+Three mock tools, all offline, all over committed fixtures. Each is imported read-only from an
+earlier homework — **no Homework #1–#5 file changed** — which is what keeps one contract for the
+operations data instead of two that can drift.
+
+| Tool | Type | Source | Returns |
+|---|---|---|---|
+| `search_knowledge_base` | read | `data/processed/chunks.jsonl` (77 chunks) | top-k chunks with `bm25_score`, `title`, `section`, `document_type`, excerpt |
+| `get_load_status` | read | `data/external/loads.json` | status, carrier, ETA, last position with its age and staleness |
+| `book_load` | **write** | `data/external/loads.json` (in-process copy only) | booking reference, or a refusal with its reason |
+
+`search_knowledge_base` is Homework #3's improved pipeline **with the semantic half removed**:
+`infer_document_type` picks the `document_type` filter and BM25 ranks inside it. Embedding a query
+needs the key this homework refuses to require. The filter still earns its place — on the committed
+`e1` example it cut the candidate set from 77 chunks to the 23 of one document before ranking
+anything. `python scripts/agent_flow.py --describe` prints all three in full, offline.
+
+## State
+
+`AgentState` accumulates; the `StepRecord`s inside it are frozen, so a step's observation cannot be
+rewritten by whatever runs next. The five fields § 2 names are all here, under those names.
+
+| Field | What it holds |
+|---|---|
+| `user_goal` | the question verbatim, never rewritten |
+| `selected_route` | one of the four routes |
+| `routing_rule` | which rule fired (R1–R9), so a trace can be audited rather than trusted |
+| `plan` | the ordered step list the route committed to **before** acting |
+| `steps` | one frozen record per executed step: index, name, kind, arguments, observation |
+| `tool_calls` | names of the tool steps that ran, in order (gate steps excluded) |
+| `observations` | each step's result — read by later steps through `observation_of()` |
+| `clarification_reason` | why the workflow asked instead of acted, or `null` |
+| `halted_at` | the step whose observation ended the plan early, or `null` |
+| `final_answer` | composed from the observations once the plan finishes or halts |
+
+Every rendered trace carries a `State after step:` line per step, and an intermediate snapshot
+deliberately does **not** know the future: `halted_at` and `final_answer` stay `null` until the step
+that produced them.
+
+## How to verify this homework (grading checklist)
+
+Git tracks all § 3 deliverables:
+
+- [`scripts/agent_flow.py`](scripts/agent_flow.py) — the custom flow
+- [`outputs/agent_flow_examples.md`](outputs/agent_flow_examples.md) — 5 examples with full tracing
+- the workflow schema, routes, tools and state — the five sections above
+
+Git also tracks [`outputs/agent_flow_results.json`](outputs/agent_flow_results.json), the
+machine-readable backing the Markdown renders from, on the same footing as HW4's
+`rag_answers_results.json` and HW5's `tool_results.json`. **Everything below runs offline — no API
+key, no network, not even for the live run.**
+
+| Rubric criterion (§ 4) | Pts | Evidence | Check |
+|---|---|---|---|
+| Use case and domain described | 5 | § Use case and scenario above — one dispatcher, one Tuesday-morning session, the four routes in the order she hits them | V1 |
+| Workflow schema present | 10 | § Workflow schema above — routes, steps and transitions, including the two that halt a plan. Full rule table in [`docs/homework6/agent-flow-spec.md`](docs/homework6/agent-flow-spec.md) | V1 |
+| ≥2 routes or ≥3 steps implemented | 15 | **4** routes and a **3**-step booking plan; 9 ordered router rules, **195** offline tests including a 41-case routing matrix that pins the rule id of every case and whose questions are deliberately *not* the committed examples | V2 |
+| ≥2 mock tools implemented | 10 | **3** tools, each returning a structured result: `search_knowledge_base`, `get_load_status`, `book_load` | V3 |
+| State described and used | 5 | § State above; and the booking route's step 3 is unreachable except through a gate that reads step 1's observation | V4 |
+| 3–5 examples with tracing | 5 | [`outputs/agent_flow_examples.md`](outputs/agent_flow_examples.md): **5** examples, **8** traced steps, all 4 routes, all 3 tools | V5, V6 |
+
+**Three results worth reading before the checks.** An adversarial review of this router found three
+real defects. All three were the same shape — **the router choosing an operand the user never
+offered** — and none of them was catchable downstream, because `check_authorisation` verifies
+whatever the router already chose. That is the general lesson: *a confirmation gate is not a
+defence against a router that picked the wrong operand.*
+
+1. **A booking borrowed its load from another clause.** *"Where is load FX-2026-000633 right now?
+   Also, book a truck from carrier CAR-00817."* committed `FX-2026-000633`, an identifier that
+   appears only in the read clause, with the gate reporting `ok: true`. Booking operands are now
+   resolved from the span that asks for the booking, not from the whole sentence.
+2. **Ambiguity was measured over well-formed identifiers only.** *"Book FX-2026-000211 or FX-26-42
+   for CAR-00817."* found one valid candidate and booked it, discarding the user's own visible
+   uncertainty. The check now counts mistyped candidates too.
+3. **A well-formed carrier id was reported as malformed.** No rule consumed a bare `carrier_id`, so
+   all four fixture carriers fell into the near-miss branch and the workflow told the user a real
+   identifier was a typo.
+
+Every fix is mutation-tested: reverting any one of them turns the suite red. V2 and V6 pin the
+first two.
+
+```bash
+# V1 — the contract prints itself: 4 routes with their plans, 3 tools, 10 state fields (offline).
+python scripts/agent_flow.py --describe
+
+# V2 — 4 routes, a 3-step booking plan, and the routing rules land 8 hand-picked questions
+# correctly, including three that two rules could plausibly claim (offline).
+python -c "import sys; sys.path.insert(0,'scripts'); from agent_flow import ROUTES, PLANS, route; \
+assert set(ROUTES) == {'knowledge_base','load_status','booking','clarification'}, ROUTES; \
+assert len(PLANS['booking']) == 3, PLANS['booking']; \
+cases = {'Explain why the migration used the strangler pattern instead of a rewrite.':'knowledge_base', \
+'Where is load FX-2026-000042?':'load_status', \
+'Book load FX-2026-000211 for carrier CAR-00817.':'booking', \
+'Give me the status of load FX-26-42.':'clarification', \
+'How do I book a load on the exchange?':'knowledge_base', \
+'What does the status matched mean?':'knowledge_base', \
+'Where is my load?':'clarification', \
+'Where is FX-2026-000042 and should I book FX-2026-000318 for CAR-00817?':'clarification'}; \
+bad = {q: route(q).route for q, want in cases.items() if route(q).route != want}; \
+assert not bad, bad; \
+print(str(len(ROUTES)) + ' routes; booking plan = ' + str(len(PLANS['booking'])) + ' steps; ' + str(len(cases)) + ' routing cases correct')"
+
+# V3 — all three mock tools run and return a result (offline).
+python -c "import sys; sys.path.insert(0,'scripts'); import agent_flow as af; \
+from external_tool import load_operations_data; \
+ops = load_operations_data(); kb = af.build_knowledge_index(af.Settings.from_env(require_key=False)); \
+assert len(af.TOOLS) >= 2, af.TOOLS; \
+a = af.search_knowledge_base('what is a backhaul', knowledge=kb, k=3); \
+b = af.get_load_status('FX-2026-000042', operations=ops); \
+c = af.book_load('FX-2026-000211', 'CAR-00817', operations=ops); \
+assert a['ok'] and b['ok'] and c['ok'], (a['ok'], b['ok'], c['ok']); \
+print(str(len(af.TOOLS)) + ' mock tools, each returning a result: ' + ', '.join(sorted(af.TOOLS)))"
+
+# V4 — state is USED: the same question stops at a different step depending on the operator's
+# decision, and the gate's verdict comes from the first step's recorded observation (offline).
+python -c "import sys; sys.path.insert(0,'scripts'); import agent_flow as af; \
+from external_tool import load_operations_data; \
+kb = af.build_knowledge_index(af.Settings.from_env(require_key=False)); \
+q = 'Book load FX-2026-000211 for carrier CAR-00817.'; \
+refused = af.run_agent(q, operations=load_operations_data(), knowledge=kb, operator_confirmed=False); \
+booked = af.run_agent(q, operations=load_operations_data(), knowledge=kb, operator_confirmed=True); \
+assert refused.halted_at == 'check_authorisation' and 'book_load' not in refused.tool_calls; \
+assert len(booked.steps) == 3 and booked.tool_calls == ['get_load_status', 'book_load']; \
+gate = booked.observation_of('check_authorisation'); seen = booked.observation_of('get_load_status'); \
+assert gate['status'] == seen['status'] == 'posted', (gate['status'], seen['status']); \
+print('same question, same first observation: the plan stops after ' + str(len(refused.steps)) + \
+' steps without --confirm and runs all ' + str(len(booked.steps)) + ' with it')"
+
+# V5 — 5 examples, each with the spec's mandated block keys (offline).
+grep -c "^## e" outputs/agent_flow_examples.md                                  # 5
+for key in "Question: " "Route: " "Final answer: " "Comment: "; do \
+  printf '%s%s\n' "$key" "$(grep -c "^$key" outputs/agent_flow_examples.md)"; done          # 5 each
+for key in "Tool called: " "Observation: " "State after step: "; do \
+  printf '%s%s\n' "$key" "$(grep -c "^$key" outputs/agent_flow_examples.md)"; done          # 8 each — one per EXECUTED step
+python -c "import json; d = json.load(open('outputs/agent_flow_results.json')); \
+routes = [e['route'] for e in d['examples']]; \
+tools = sorted({t for e in d['examples'] for t in e['tool_calls']}); \
+steps = [len(e['steps']) for e in d['examples']]; \
+assert set(routes) == set(d['routes']), routes; assert len(tools) >= 2, tools; assert max(steps) >= 3, steps; \
+print(str(len(routes)) + ' examples covering all ' + str(len(set(routes))) + ' routes; tools used: ' \
++ ', '.join(tools) + '; deepest plan ' + str(max(steps)) + ' steps')"
+
+# V6 — the flow reaches no model, reproduces byte for byte, refuses an ambiguous write, and never
+# persists a booking (offline; the first line must print nothing).
+grep -nE "chat\.completions|responses\.create|embed_texts|embed_query|OpenAI\(" scripts/agent_flow.py
+python scripts/agent_flow.py --examples --output /tmp/hw6.md --results /tmp/hw6.json > /dev/null
+diff outputs/agent_flow_examples.md /tmp/hw6.md && diff outputs/agent_flow_results.json /tmp/hw6.json \
+  && echo "two runs byte-identical — no model, no sampling"
+python -c "import sys, json; sys.path.insert(0,'scripts'); from agent_flow import route; \
+d = route('Where is FX-2026-000042 and should I book FX-2026-000318 for CAR-00817?'); \
+assert d.route == 'clarification' and d.reason == 'ambiguous_load_id', d; \
+f = json.load(open('data/external/loads.json')); \
+assert f['loads']['FX-2026-000211']['status'] == 'posted', 'a committed booking leaked to disk'; \
+print('two load ids in one booking request -> refused, not guessed; operations fixture still pristine')"
+
+# The full test suite — 521 tests (74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5 + 195 HW6), offline.
+python -m pytest -q
+```
+
+## Example trace
+
+The block below is `e3` from [`outputs/agent_flow_examples.md`](outputs/agent_flow_examples.md),
+abridged only by truncating the two long JSON payloads. It is the refused half of the booking pair —
+the run that proves the gate is real.
+
+```bash
+$ python scripts/agent_flow.py --question "Book load FX-2026-000211 for carrier CAR-00817."
+
+Question: Book load FX-2026-000211 for carrier CAR-00817.
+Route: booking (rule R2)
+Plan: get_load_status → check_authorisation → book_load
+
+Step 1/3 — get_load_status (tool)
+Input: {"load_id": "FX-2026-000211"}
+Tool called: get_load_status
+Observation: {"booking_reference": null, "carrier": null, "destination": "Milan, IT", "origin": "Antwerp, BE", "ok": true, "status": "posted", ...}
+State after step: {"halted_at": null, "steps_executed": "1 of 3", "tool_calls": ["get_load_status"], "final_answer": null, ...}
+
+Step 2/3 — check_authorisation (gate)
+Input: {"load_id": "FX-2026-000211", "operator_confirmed": false}
+Tool called: (none — `check_authorisation` is a gate step, it reads state, not a source)
+Observation: {"carrier_id": "CAR-00817", "error": "confirmation_required", "load_is_open": true, "ok": false, "operator_confirmed": false, "status": "posted", ...}
+State after step: {"halted_at": "check_authorisation", "steps_executed": "2 of 3", "tool_calls": ["get_load_status"], ...}
+
+Halted at: check_authorisation — the remaining plan steps lost their justification.
+
+Final answer: Load FX-2026-000211 is posted and open, and the request would commit it to
+CAR-00817. Booking is irreversible and no human operator authorised it. Check that both identifiers
+are the ones you meant, then re-run the same request with --confirm; that decision is the
+operator's.
+
+Source: freight-exchange operations API (mock)
+```
+
+The error is `confirmation_required` and **not** `load_not_open`, and `load_is_open` is `true`. The
+load was bookable and the workflow declined anyway. `book_load` never appears in `tool_calls`, so
+nothing was called and nothing changed. Adding `--confirm` re-runs the identical first two steps and
+reaches step 3, which commits `BKG-2026-000211`.
+
+The refusal names **both** operands deliberately. The router selects the load and the carrier out
+of the question, and this line is the last point at which a human can notice it selected the wrong
+one — see the three defects above.
+
+## Examples and results
+
+| Example | Route (rule) | Steps run | Outcome |
+|---|---|---|---|
+| e1 · why the strangler pattern | `knowledge_base` (R6) | 1 of 1 | quoted from the case study, filtered to `case-study` before ranking |
+| e2 · live state of `FX-2026-000042` | `load_status` (R4) | 1 of 1 | in transit, ETA 14 Aug 09:30 UTC, position 214 s old and fresh |
+| e3 · book `FX-2026-000211` | `booking` (R2) | **2 of 3** | `confirmation_required` — open, but nobody authorised it |
+| e4 · the same booking, authorised | `booking` (R2) | 3 of 3 | `BKG-2026-000211`, committed in memory only |
+| e5 · `FX-26-42` | `clarification` (R5) | 1 of 1 | `malformed_load_id` — the typo is named, not answered around |
+
+All five run against **one** shared in-memory copy of the operations data, in that order, so e3 and
+e4 are a sequence rather than two independent simulations.
+
+## Conclusions — Homework #6
+
+**State is load-bearing rather than decorative, and the booking pair is the proof.** e3 and e4 put
+the same question with the same first observation and stop at different steps. The third step is
+unreachable except through the second, and the second is a verdict on what the first recorded. A
+test pins this from the other side: with a stale recorded observation the gate follows the record,
+not the live dictionary it was never handed. That is the difference between a workflow that
+remembers and a workflow that re-derives.
+
+**The interesting result is what a rule-based router cannot be talked into.** Homework #5 measured
+its model padding "carrier 817" into `CAR-00817` — well formed, real, and probably not the carrier
+the user meant. Every syntactic validator accepted it, and only the human at the confirmation prompt
+caught it. This router has no capacity to invent an operand: the same phrasing yields
+`missing_carrier_id`, and the mistyped `FX-26-42` that Homework #5's model silently declined to emit
+is named here as a malformed identifier — the exact gain that homework's design doc predicted a
+pre-router would buy. Determinism buys refusals that a helpful model will not make.
+
+**The mirror-image failure was real, and a gate did not stop it.** Binding to the first identifier
+in a sentence let a read-then-book question commit the load the user only asked about, with
+`check_authorisation` confirming the wrong load was open. The lesson generalises past this homework
+and past the confused-deputy case Homework #5 already documented: a confirmation gate validates the
+operand it is given, so it can only ever be as correct as whatever chose that operand. Two further
+defects surfaced in the same review — well-formed carrier identifiers reported as malformed, and any
+sentence containing the word "book" swallowed into the booking route, including *"How do I book a
+load on the exchange?"*. All three were found by tracing rules against adversarial questions, never
+by running the flow. **Rules do not test themselves.**
+
+**The cost is on the other side and it is not small.** The router reads vocabulary and word
+position, never intent, so negation is invisible and a question naming a load is answered as a live
+lookup even when its verb phrase is definitional. The knowledge route is BM25 over a rule-inferred
+filter — Homework #3's pipeline with the semantic half removed — and its answers are extracted
+quotations with a `[chunk_id]`, not the synthesised, grounded paragraphs Homework #4 writes. On a
+documentation question Homework #4 is simply better, and it cannot run without a key. Every one of
+these is enumerated with its failing question in
+[`docs/homework6/agent-flow-spec.md`](docs/homework6/agent-flow-spec.md) § Known limits. The trade
+this homework makes is fluency for reproducibility, and the assignment's own § 2 is what invites it:
+routing without an LLM is normal here, and this is what normal costs.
+
+---
+
 ## Repository layout
 
 ```
@@ -978,7 +1350,7 @@ problem.
 ├── data/processed/
 │   ├── chunks.jsonl              77 chunks — the Homework #1 deliverable
 │   └── chunks_500.jsonl          116 chunks at 500/100 — chunk-size experiment only
-├── data/eval/test_queries.json   10 evaluation queries + relevance comments (HW2 + HW3 + HW4 + HW5)
+├── data/eval/test_queries.json   10 evaluation queries + relevance comments (HW2 + HW3 + HW4 + HW5 + HW6)
 ├── data/external/loads.json      mock freight operations API — the Homework #5 external source
 ├── index/
 │   ├── chroma/                   the graded index (77 vectors) + manifest.json
@@ -992,11 +1364,12 @@ problem.
 │   ├── run_test_queries.py       evaluation → outputs/retrieval_examples.md
 │   ├── rag_answer.py             Homework #4 — grounded QA, --evaluate / --improvements
 │   ├── external_tool.py          Homework #5 — tool contract, validation, orchestration
+│   ├── agent_flow.py             Homework #6 — rule-based router, plans, steps, state
 │   └── chunk_size_experiment.py  800/150 vs 500/100 comparison
 ├── notebooks/retrieval.ipynb     the same pipeline, interactively
-├── outputs/                      retrieval examples, comparison, grounded answers, tool examples
-├── tests/                        326 tests; no API key or network required
-└── docs/homework1|homework2|homework3|homework4|homework5|tasks
+├── outputs/                      retrieval examples, comparison, grounded answers, tool and agent examples
+├── tests/                        521 tests; no API key or network required
+└── docs/homework1|homework2|homework3|homework4|homework5|homework6|tasks
 ```
 
 Design notes and the full pipeline specification live in [`docs/`](docs/README.md) — start there.
@@ -1004,5 +1377,6 @@ The per-homework detail is in
 [`docs/homework1/`](docs/homework1/README.md) and [`docs/homework2/`](docs/homework2/analysis.md).
 The per-homework design decisions continue in
 [`docs/homework3/retrieval-improvements-spec.md`](docs/homework3/retrieval-improvements-spec.md),
-[`docs/homework4/generation-spec.md`](docs/homework4/generation-spec.md) and
-[`docs/homework5/tool-integration-spec.md`](docs/homework5/tool-integration-spec.md).
+[`docs/homework4/generation-spec.md`](docs/homework4/generation-spec.md),
+[`docs/homework5/tool-integration-spec.md`](docs/homework5/tool-integration-spec.md) and
+[`docs/homework6/agent-flow-spec.md`](docs/homework6/agent-flow-spec.md).

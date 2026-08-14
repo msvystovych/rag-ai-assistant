@@ -8,6 +8,8 @@ This repo is a graded homework series. It builds a RAG system step by step:
 - HW4: grounded answer generation — prompt versions, a relevance floor and cited answers.
 - HW5: external tool integration — a model-routed tool-calling turn over a mock operations API,
   with a validation boundary and an operator confirmation gate.
+- HW6: first agentic structure — a deterministic rule-based router, a fixed plan per route, and
+  state that later steps read. No model and no API key anywhere in this layer.
 
 Further homeworks will extend this repo. The assignment specs in `docs/tasks/` (Ukrainian) are the
 **arbiter for every graded behavior**. On any conflict between code, tests, README, and spec, the
@@ -33,6 +35,9 @@ The layout repeats per homework — follow the same pattern when a new homework 
   - `docs/homework5/tool-integration-spec.md` owns the tool layer (`external_tool.py` +
     `data/external/loads.json`). The tool contract, the validation boundary, the confirmation gate
     and the bounded orchestration loop live there.
+  - `docs/homework6/agent-flow-spec.md` owns the agent layer (`agent_flow.py`). The nine router
+    rules and their order, the per-route plans, the tool/gate step split and the state contract
+    live there.
 - The pipeline chain: `data/raw/` → `scripts/prepare_knowledge_base.py` →
   `data/processed/chunks.jsonl` → `scripts/build_index.py` → `index/chroma/` (+ `manifest.json`) →
   one of the downstream scripts → `outputs/`. The downstream scripts:
@@ -43,6 +48,8 @@ The layout repeats per homework — follow the same pattern when a new homework 
     `--improvements`.
   - `scripts/external_tool.py` — HW5: tool calling over `data/external/loads.json`. It falls
     through to HW4 when the model asks for no tool. Flags: `--examples` / `--list-tools`.
+  - `scripts/agent_flow.py` — HW6: the deterministic workflow. Rule-based router → per-route plan →
+    steps → state → composed answer. Flags: `--examples` / `--describe` / `--confirm`.
 - `scripts/rag_lib.py` — the shared library: typed settings, embeddings, index handle, and the HW3
   layer (`infer_document_type`, `Bm25Index`, `rrf_fuse`, `search_improved`). Scripts import it as a
   sibling (`from rag_lib import …`). `notebooks/retrieval.ipynb` is a thin front-end over it.
@@ -50,6 +57,14 @@ The layout repeats per homework — follow the same pattern when a new homework 
     `rag_answer.py`.
   - HW5 added nothing here and changed no HW1–HW4 file. `external_tool.py` is self-contained, and
     it imports `rag_answer.answer_question` read-only for its fallback branch.
+  - HW6 added nothing here either and changed no HW1–HW5 *code* file. `agent_flow.py` imports
+    read-only from `rag_lib` (`Bm25Index`, `load_chunks`, `infer_document_type`, `Chunk`,
+    `Settings`, `RetrievalError`, `REPO_ROOT`) and from `external_tool` (`load_operations_data`,
+    `get_load_status`, `book_load`, `LOAD_ID_PATTERN`, `CARRIER_ID_PATTERN`, `OPEN_STATUSES`,
+    `DEFAULT_LOADS`, `PROTECTED_OUTPUTS`). The constants are load-bearing, not incidental: the HW6
+    router builds its identifier regexes from HW5's two patterns and its booking gate from
+    `OPEN_STATUSES`, so editing either changes HW6 behaviour. Its own `PROTECTED_OUTPUTS` extends
+    HW5's rather than restating it — a future homework should import and extend HW6's in turn.
 - `tests/` — the offline pytest suite. `scripts/` is not a package (the tests insert it into
   `sys.path`).
 
@@ -224,8 +239,24 @@ python -m pytest -q                         # full suite — offline, no key, no
   ungradeable.
   Tool text that reads as honest documentation can silently disable a code path. Change such text
   only with a real run, to confirm that the routing still happens.
-- **Counts embedded in docs go stale silently.** The README states test counts (currently 326 =
-  74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5) and headline metrics. On any change that adds tests or
+- **HW6 has no model in it at all.** The router, the three tools and the answer composition are
+  rules. Never add an LLM call to `agent_flow.py` — `outputs/agent_flow_examples.md` reproduces byte
+  for byte only because there is none, and a README check diffs two runs to prove it. The knowledge
+  tool is deliberately BM25 + `infer_document_type` and NOT `search_improved`: the semantic branch
+  needs a key, and requiring one would break the homework's central claim.
+- **HW6's router rule ORDER is load-bearing, and its rules are numbered in the trace.** Every
+  `RouteDecision` records `R1`–`R9`, the README and the design doc both print that table, and
+  `outputs/agent_flow_results.json` stores it. Reordering or renumbering a rule silently invalidates
+  all three plus the committed examples. Three real defects (a booking bound to the wrong load id, a
+  valid carrier id reported as malformed, and any sentence containing "book" swallowed into the
+  booking route) were found only by tracing adversarial questions against the rules — rules do not
+  test themselves, so change one only with a fresh trace run.
+- **HW6's examples are two-pass like HW2's through HW5's.** Write `hw6_scenarios` (per-example
+  `comment`) and `hw6_conclusion` in `test_queries.json` by hand after a real `--examples` run. The
+  script names every missing entry on stderr and refuses to render
+  `outputs/agent_flow_examples.md`.
+- **Counts embedded in docs go stale silently.** The README states test counts (currently 521 =
+  74 HW1-2 + 52 HW3 + 79 HW4 + 121 HW5 + 195 HW6) and headline metrics. On any change that adds tests or
   re-runs the evaluation, you must re-verify those numbers. Do it LAST, after the final code change.
   The README's own checklist commands are the arbiter.
 - Versions: read `requirements.txt` directly (openai 2.x, chromadb 1.x, pytest 9.x). The exact pins

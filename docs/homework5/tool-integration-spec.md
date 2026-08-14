@@ -294,6 +294,13 @@ an `unknown_argument` refusal. The model had an explicit invitation to send that
   clause "orchestration layer **or** model" takes one of the two, and the model already satisfies
   it. Per the s3 limit above, a pre-router would also be the one thing that could name a mistyped
   identifier. That is a real gain, and still not what the assignment asked of this homework.
+
+  **Claimed by Homework #6 (2026-08-14).** Its § 2 asks for deterministic rule-based routing in so
+  many words, so `scripts/agent_flow.py` builds the router this entry declined — and it collects
+  the predicted gain: the committed example `e5` puts the same malformed `FX-26-42` that scenario
+  s3 used, and names the typo instead of falling through to retrieval. See
+  [`../homework6/agent-flow-spec.md`](../homework6/agent-flow-spec.md) § Decisions 9. This entry is
+  not rewritten; it recorded the right decision for Homework #5.
 - **No agentic re-query loop.** This stays Homework #4's stated deferral, and this homework does
   not claim it. The loop here calls the tools the model asks for, and then stops. It never
   reformulates a question, never retries a failed retrieval with different terms, and never plans a
