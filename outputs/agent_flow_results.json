@@ -1,0 +1,698 @@
+{
+  "k": 3,
+  "corpus_size": 77,
+  "routes": [
+    "knowledge_base",
+    "load_status",
+    "booking",
+    "clarification"
+  ],
+  "plans": {
+    "knowledge_base": [
+      "search_knowledge_base"
+    ],
+    "load_status": [
+      "get_load_status"
+    ],
+    "booking": [
+      "get_load_status",
+      "check_authorisation",
+      "book_load"
+    ],
+    "clarification": [
+      "ask_user"
+    ]
+  },
+  "tools": [
+    "book_load",
+    "get_load_status",
+    "search_knowledge_base"
+  ],
+  "knowledge_source": "data/processed/chunks.jsonl",
+  "operations_source": "data/external/loads.json",
+  "examples": [
+    {
+      "question": "Explain why the migration used the strangler pattern instead of a rewrite.",
+      "route": "knowledge_base",
+      "routing_rule": "R6",
+      "plan": [
+        "search_knowledge_base"
+      ],
+      "steps": [
+        {
+          "index": 1,
+          "step": "search_knowledge_base",
+          "kind": "tool",
+          "arguments": {
+            "question": "Explain why the migration used the strangler pattern instead of a rewrite.",
+            "k": 3
+          },
+          "observation": {
+            "ok": true,
+            "document_type_filter": "case-study",
+            "match_count": 3,
+            "top_chunk_id": "monolith_to_microservices_migration_chunk_010",
+            "matches": [
+              {
+                "rank": 1,
+                "chunk_id": "monolith_to_microservices_migration_chunk_010",
+                "bm25_score": 12.1774,
+                "title": "Migrating a Logistics Monolith to Microservices",
+                "section": "Strangler-Fig Execution",
+                "document_type": "case-study",
+                "excerpt": "The strangler-fig pattern replaces a system incrementally by intercepting calls at its edge and redirecting them, capability by capability, until nothing routes to the original. It is preferred over a rewrite because it keeps the product shippable throughout, and because each increment is independently reversible."
+              },
+              {
+                "rank": 2,
+                "chunk_id": "monolith_to_microservices_migration_chunk_001",
+                "bm25_score": 7.7283,
+                "title": "Migrating a Logistics Monolith to Microservices",
+                "section": "Introduction",
+                "document_type": "case-study",
+                "excerpt": "This narrative is a generic composite of standard strangler-fig practice as it is applied to freight and logistics platforms. It is not a report on any specific company, team, or system. Every step described here is drawn from published migration literature and from patterns that recur across the industry; the only co…"
+              },
+              {
+                "rank": 3,
+                "chunk_id": "monolith_to_microservices_migration_chunk_011",
+                "bm25_score": 5.9332,
+                "title": "Migrating a Logistics Monolith to Microservices",
+                "section": "Strangler-Fig Execution",
+                "document_type": "case-study",
+                "excerpt": "original. It is preferred over a rewrite because it keeps the product shippable throughout, and because each increment is independently reversible. The first structural move is a routing facade in front of the monolith — usually an API gateway or reverse proxy that owns the public contract and can route any route, met…"
+              }
+            ],
+            "source": "data/processed/chunks.jsonl (knowledge base)"
+          },
+          "state_after": {
+            "user_goal": "Explain why the migration used the strangler pattern instead of a rewrite.",
+            "selected_route": "knowledge_base",
+            "routing_rule": "R6",
+            "plan": [
+              "search_knowledge_base"
+            ],
+            "steps_executed": "1 of 1",
+            "tool_calls": [
+              "search_knowledge_base"
+            ],
+            "observations": [
+              {
+                "step": "search_knowledge_base",
+                "ok": true,
+                "error": null
+              }
+            ],
+            "clarification_reason": null,
+            "halted_at": null,
+            "final_answer": null
+          }
+        }
+      ],
+      "tool_calls": [
+        "search_knowledge_base"
+      ],
+      "clarification_reason": null,
+      "halted_at": null,
+      "final_state": {
+        "user_goal": "Explain why the migration used the strangler pattern instead of a rewrite.",
+        "selected_route": "knowledge_base",
+        "routing_rule": "R6",
+        "plan": [
+          "search_knowledge_base"
+        ],
+        "steps_executed": "1 of 1",
+        "tool_calls": [
+          "search_knowledge_base"
+        ],
+        "observations": [
+          {
+            "step": "search_knowledge_base",
+            "ok": true,
+            "error": null
+          }
+        ],
+        "clarification_reason": null,
+        "halted_at": null,
+        "final_answer": "According to Migrating a Logistics Monolith to Microservices § Strangler-Fig Execution: The strangler-fig pattern replaces a system incrementally by intercepting calls at its edge and redirecting them, capability by capability, until nothing routes to the original. It is preferred over a rewrite because it keeps the product shippable throughout, and because each increment is independently reversible. [monolith_to_microservices_migration_chunk_010]"
+      },
+      "final_answer": "According to Migrating a Logistics Monolith to Microservices § Strangler-Fig Execution: The strangler-fig pattern replaces a system incrementally by intercepting calls at its edge and redirecting them, capability by capability, until nothing routes to the original. It is preferred over a rewrite because it keeps the product shippable throughout, and because each increment is independently reversible. [monolith_to_microservices_migration_chunk_010]",
+      "source": "data/processed/chunks.jsonl (knowledge base)",
+      "example_id": "e1",
+      "title": "documented knowledge — no live data involved",
+      "rubric_role": "route A · the knowledge-base workflow, one tool, one step",
+      "operator_confirmed": false
+    },
+    {
+      "question": "Where is load FX-2026-000042 right now, and what is its ETA?",
+      "route": "load_status",
+      "routing_rule": "R4",
+      "plan": [
+        "get_load_status"
+      ],
+      "steps": [
+        {
+          "index": 1,
+          "step": "get_load_status",
+          "kind": "tool",
+          "arguments": {
+            "load_id": "FX-2026-000042"
+          },
+          "observation": {
+            "ok": true,
+            "load_id": "FX-2026-000042",
+            "status": "in_transit",
+            "origin": "Rotterdam, NL",
+            "destination": "Poznan, PL",
+            "equipment": "curtainsider",
+            "weight_kg": 18400,
+            "pickup_window": {
+              "from": "2026-08-12T06:00:00+00:00",
+              "to": "2026-08-12T14:00:00+00:00"
+            },
+            "carrier": {
+              "carrier_id": "CAR-00817",
+              "name": "Nordwind Transport",
+              "status": "active"
+            },
+            "booking_reference": "BKG-2026-004411",
+            "eta": "2026-08-14T09:30:00+00:00",
+            "last_position": {
+              "place": "A2 motorway near Konin, PL",
+              "lat": 52.223,
+              "lon": 18.251
+            },
+            "last_position_age_s": 214,
+            "position_is_stale": false,
+            "updated_at": "2026-08-13T05:56:26+00:00",
+            "source": "freight-exchange operations API (mock)",
+            "snapshot_at": "2026-08-13T06:00:00+00:00"
+          },
+          "state_after": {
+            "user_goal": "Where is load FX-2026-000042 right now, and what is its ETA?",
+            "selected_route": "load_status",
+            "routing_rule": "R4",
+            "plan": [
+              "get_load_status"
+            ],
+            "steps_executed": "1 of 1",
+            "tool_calls": [
+              "get_load_status"
+            ],
+            "observations": [
+              {
+                "step": "get_load_status",
+                "ok": true,
+                "error": null
+              }
+            ],
+            "clarification_reason": null,
+            "halted_at": null,
+            "final_answer": null
+          }
+        }
+      ],
+      "tool_calls": [
+        "get_load_status"
+      ],
+      "clarification_reason": null,
+      "halted_at": null,
+      "final_state": {
+        "user_goal": "Where is load FX-2026-000042 right now, and what is its ETA?",
+        "selected_route": "load_status",
+        "routing_rule": "R4",
+        "plan": [
+          "get_load_status"
+        ],
+        "steps_executed": "1 of 1",
+        "tool_calls": [
+          "get_load_status"
+        ],
+        "observations": [
+          {
+            "step": "get_load_status",
+            "ok": true,
+            "error": null
+          }
+        ],
+        "clarification_reason": null,
+        "halted_at": null,
+        "final_answer": "Load FX-2026-000042 is in_transit, running Rotterdam, NL → Poznan, PL. It is with Nordwind Transport (CAR-00817). ETA 2026-08-14T09:30:00+00:00. Last known position: A2 motorway near Konin, PL, 214 s old (fresh). These are live operational facts, from the operations API rather than from the documentation."
+      },
+      "final_answer": "Load FX-2026-000042 is in_transit, running Rotterdam, NL → Poznan, PL. It is with Nordwind Transport (CAR-00817). ETA 2026-08-14T09:30:00+00:00. Last known position: A2 motorway near Konin, PL, 214 s old (fresh). These are live operational facts, from the operations API rather than from the documentation.",
+      "source": "freight-exchange operations API (mock)",
+      "example_id": "e2",
+      "title": "live state of a specific load",
+      "rubric_role": "route B · the operations workflow — dynamic state no corpus can hold",
+      "operator_confirmed": false
+    },
+    {
+      "question": "Book load FX-2026-000211 for carrier CAR-00817.",
+      "route": "booking",
+      "routing_rule": "R2",
+      "plan": [
+        "get_load_status",
+        "check_authorisation",
+        "book_load"
+      ],
+      "steps": [
+        {
+          "index": 1,
+          "step": "get_load_status",
+          "kind": "tool",
+          "arguments": {
+            "load_id": "FX-2026-000211"
+          },
+          "observation": {
+            "ok": true,
+            "load_id": "FX-2026-000211",
+            "status": "posted",
+            "origin": "Antwerp, BE",
+            "destination": "Milan, IT",
+            "equipment": "curtainsider",
+            "weight_kg": 15200,
+            "pickup_window": {
+              "from": "2026-08-16T06:00:00+00:00",
+              "to": "2026-08-16T18:00:00+00:00"
+            },
+            "carrier": null,
+            "booking_reference": null,
+            "eta": null,
+            "last_position": null,
+            "last_position_age_s": null,
+            "position_is_stale": null,
+            "updated_at": "2026-08-13T04:12:55+00:00",
+            "source": "freight-exchange operations API (mock)",
+            "snapshot_at": "2026-08-13T06:00:00+00:00"
+          },
+          "state_after": {
+            "user_goal": "Book load FX-2026-000211 for carrier CAR-00817.",
+            "selected_route": "booking",
+            "routing_rule": "R2",
+            "plan": [
+              "get_load_status",
+              "check_authorisation",
+              "book_load"
+            ],
+            "steps_executed": "1 of 3",
+            "tool_calls": [
+              "get_load_status"
+            ],
+            "observations": [
+              {
+                "step": "get_load_status",
+                "ok": true,
+                "error": null
+              }
+            ],
+            "clarification_reason": null,
+            "halted_at": null,
+            "final_answer": null
+          }
+        },
+        {
+          "index": 2,
+          "step": "check_authorisation",
+          "kind": "gate",
+          "arguments": {
+            "load_id": "FX-2026-000211",
+            "carrier_id": "CAR-00817",
+            "operator_confirmed": false
+          },
+          "observation": {
+            "ok": false,
+            "error": "confirmation_required",
+            "message": "load FX-2026-000211 is posted and open, and the request would commit it to CAR-00817. Booking is irreversible and no human operator authorised it. Check that both identifiers are the ones you meant, then re-run the same request with --confirm; that decision is the operator's.",
+            "load_id": "FX-2026-000211",
+            "carrier_id": "CAR-00817",
+            "status": "posted",
+            "load_is_open": true,
+            "operator_confirmed": false
+          },
+          "state_after": {
+            "user_goal": "Book load FX-2026-000211 for carrier CAR-00817.",
+            "selected_route": "booking",
+            "routing_rule": "R2",
+            "plan": [
+              "get_load_status",
+              "check_authorisation",
+              "book_load"
+            ],
+            "steps_executed": "2 of 3",
+            "tool_calls": [
+              "get_load_status"
+            ],
+            "observations": [
+              {
+                "step": "get_load_status",
+                "ok": true,
+                "error": null
+              },
+              {
+                "step": "check_authorisation",
+                "ok": false,
+                "error": "confirmation_required"
+              }
+            ],
+            "clarification_reason": null,
+            "halted_at": "check_authorisation",
+            "final_answer": null
+          }
+        }
+      ],
+      "tool_calls": [
+        "get_load_status"
+      ],
+      "clarification_reason": null,
+      "halted_at": "check_authorisation",
+      "final_state": {
+        "user_goal": "Book load FX-2026-000211 for carrier CAR-00817.",
+        "selected_route": "booking",
+        "routing_rule": "R2",
+        "plan": [
+          "get_load_status",
+          "check_authorisation",
+          "book_load"
+        ],
+        "steps_executed": "2 of 3",
+        "tool_calls": [
+          "get_load_status"
+        ],
+        "observations": [
+          {
+            "step": "get_load_status",
+            "ok": true,
+            "error": null
+          },
+          {
+            "step": "check_authorisation",
+            "ok": false,
+            "error": "confirmation_required"
+          }
+        ],
+        "clarification_reason": null,
+        "halted_at": "check_authorisation",
+        "final_answer": "Load FX-2026-000211 is posted and open, and the request would commit it to CAR-00817. Booking is irreversible and no human operator authorised it. Check that both identifiers are the ones you meant, then re-run the same request with --confirm; that decision is the operator's."
+      },
+      "final_answer": "Load FX-2026-000211 is posted and open, and the request would commit it to CAR-00817. Booking is irreversible and no human operator authorised it. Check that both identifiers are the ones you meant, then re-run the same request with --confirm; that decision is the operator's.",
+      "source": "freight-exchange operations API (mock)",
+      "example_id": "e3",
+      "title": "an irreversible write, refused at the gate",
+      "rubric_role": "route C · the 3-step plan halting at step 2 — the operator never authorised it",
+      "operator_confirmed": false
+    },
+    {
+      "question": "Book load FX-2026-000211 for carrier CAR-00817.",
+      "route": "booking",
+      "routing_rule": "R2",
+      "plan": [
+        "get_load_status",
+        "check_authorisation",
+        "book_load"
+      ],
+      "steps": [
+        {
+          "index": 1,
+          "step": "get_load_status",
+          "kind": "tool",
+          "arguments": {
+            "load_id": "FX-2026-000211"
+          },
+          "observation": {
+            "ok": true,
+            "load_id": "FX-2026-000211",
+            "status": "posted",
+            "origin": "Antwerp, BE",
+            "destination": "Milan, IT",
+            "equipment": "curtainsider",
+            "weight_kg": 15200,
+            "pickup_window": {
+              "from": "2026-08-16T06:00:00+00:00",
+              "to": "2026-08-16T18:00:00+00:00"
+            },
+            "carrier": null,
+            "booking_reference": null,
+            "eta": null,
+            "last_position": null,
+            "last_position_age_s": null,
+            "position_is_stale": null,
+            "updated_at": "2026-08-13T04:12:55+00:00",
+            "source": "freight-exchange operations API (mock)",
+            "snapshot_at": "2026-08-13T06:00:00+00:00"
+          },
+          "state_after": {
+            "user_goal": "Book load FX-2026-000211 for carrier CAR-00817.",
+            "selected_route": "booking",
+            "routing_rule": "R2",
+            "plan": [
+              "get_load_status",
+              "check_authorisation",
+              "book_load"
+            ],
+            "steps_executed": "1 of 3",
+            "tool_calls": [
+              "get_load_status"
+            ],
+            "observations": [
+              {
+                "step": "get_load_status",
+                "ok": true,
+                "error": null
+              }
+            ],
+            "clarification_reason": null,
+            "halted_at": null,
+            "final_answer": null
+          }
+        },
+        {
+          "index": 2,
+          "step": "check_authorisation",
+          "kind": "gate",
+          "arguments": {
+            "load_id": "FX-2026-000211",
+            "carrier_id": "CAR-00817",
+            "operator_confirmed": true
+          },
+          "observation": {
+            "ok": true,
+            "load_id": "FX-2026-000211",
+            "carrier_id": "CAR-00817",
+            "status": "posted",
+            "load_is_open": true,
+            "operator_confirmed": true,
+            "message": "load FX-2026-000211 is posted and open, and the operator authorised committing it to CAR-00817."
+          },
+          "state_after": {
+            "user_goal": "Book load FX-2026-000211 for carrier CAR-00817.",
+            "selected_route": "booking",
+            "routing_rule": "R2",
+            "plan": [
+              "get_load_status",
+              "check_authorisation",
+              "book_load"
+            ],
+            "steps_executed": "2 of 3",
+            "tool_calls": [
+              "get_load_status"
+            ],
+            "observations": [
+              {
+                "step": "get_load_status",
+                "ok": true,
+                "error": null
+              },
+              {
+                "step": "check_authorisation",
+                "ok": true,
+                "error": null
+              }
+            ],
+            "clarification_reason": null,
+            "halted_at": null,
+            "final_answer": null
+          }
+        },
+        {
+          "index": 3,
+          "step": "book_load",
+          "kind": "tool",
+          "arguments": {
+            "load_id": "FX-2026-000211",
+            "carrier_id": "CAR-00817"
+          },
+          "observation": {
+            "ok": true,
+            "load_id": "FX-2026-000211",
+            "status": "booked",
+            "carrier": {
+              "carrier_id": "CAR-00817",
+              "name": "Nordwind Transport"
+            },
+            "booking_reference": "BKG-2026-000211",
+            "booked_at": "2026-08-13T06:00:00+00:00",
+            "irreversible": true,
+            "source": "freight-exchange operations API (mock)"
+          },
+          "state_after": {
+            "user_goal": "Book load FX-2026-000211 for carrier CAR-00817.",
+            "selected_route": "booking",
+            "routing_rule": "R2",
+            "plan": [
+              "get_load_status",
+              "check_authorisation",
+              "book_load"
+            ],
+            "steps_executed": "3 of 3",
+            "tool_calls": [
+              "get_load_status",
+              "book_load"
+            ],
+            "observations": [
+              {
+                "step": "get_load_status",
+                "ok": true,
+                "error": null
+              },
+              {
+                "step": "check_authorisation",
+                "ok": true,
+                "error": null
+              },
+              {
+                "step": "book_load",
+                "ok": true,
+                "error": null
+              }
+            ],
+            "clarification_reason": null,
+            "halted_at": null,
+            "final_answer": null
+          }
+        }
+      ],
+      "tool_calls": [
+        "get_load_status",
+        "book_load"
+      ],
+      "clarification_reason": null,
+      "halted_at": null,
+      "final_state": {
+        "user_goal": "Book load FX-2026-000211 for carrier CAR-00817.",
+        "selected_route": "booking",
+        "routing_rule": "R2",
+        "plan": [
+          "get_load_status",
+          "check_authorisation",
+          "book_load"
+        ],
+        "steps_executed": "3 of 3",
+        "tool_calls": [
+          "get_load_status",
+          "book_load"
+        ],
+        "observations": [
+          {
+            "step": "get_load_status",
+            "ok": true,
+            "error": null
+          },
+          {
+            "step": "check_authorisation",
+            "ok": true,
+            "error": null
+          },
+          {
+            "step": "book_load",
+            "ok": true,
+            "error": null
+          }
+        ],
+        "clarification_reason": null,
+        "halted_at": null,
+        "final_answer": "Booked. Load FX-2026-000211 was posted and open, the operator authorised the commit, and it is now booked to Nordwind Transport (CAR-00817) under booking reference BKG-2026-000211. Booking is irreversible and happens exactly once per load."
+      },
+      "final_answer": "Booked. Load FX-2026-000211 was posted and open, the operator authorised the commit, and it is now booked to Nordwind Transport (CAR-00817) under booking reference BKG-2026-000211. Booking is irreversible and happens exactly once per load.",
+      "source": "freight-exchange operations API (mock)",
+      "example_id": "e4",
+      "title": "the same write, authorised",
+      "rubric_role": "route C again · all 3 steps run, and step 3 is reachable only because step 1's observation said the load was open",
+      "operator_confirmed": true
+    },
+    {
+      "question": "Give me the status of load FX-26-42.",
+      "route": "clarification",
+      "routing_rule": "R5",
+      "plan": [
+        "ask_user"
+      ],
+      "steps": [
+        {
+          "index": 1,
+          "step": "ask_user",
+          "kind": "gate",
+          "arguments": {
+            "reason": "malformed_load_id"
+          },
+          "observation": {
+            "ok": false,
+            "error": "malformed_load_id",
+            "message": "That is not a load identifier I can use. A load identifier has the form FX-YYYY-NNNNNN — four digits for the year and six for the sequence, upper case, for example FX-2026-000042. Could you give me the full identifier?",
+            "detected": {
+              "load_id": null,
+              "carrier_id": null,
+              "routing_rule": "R5"
+            }
+          },
+          "state_after": {
+            "user_goal": "Give me the status of load FX-26-42.",
+            "selected_route": "clarification",
+            "routing_rule": "R5",
+            "plan": [
+              "ask_user"
+            ],
+            "steps_executed": "1 of 1",
+            "tool_calls": [],
+            "observations": [
+              {
+                "step": "ask_user",
+                "ok": false,
+                "error": "malformed_load_id"
+              }
+            ],
+            "clarification_reason": "malformed_load_id",
+            "halted_at": null,
+            "final_answer": null
+          }
+        }
+      ],
+      "tool_calls": [],
+      "clarification_reason": "malformed_load_id",
+      "halted_at": null,
+      "final_state": {
+        "user_goal": "Give me the status of load FX-26-42.",
+        "selected_route": "clarification",
+        "routing_rule": "R5",
+        "plan": [
+          "ask_user"
+        ],
+        "steps_executed": "1 of 1",
+        "tool_calls": [],
+        "observations": [
+          {
+            "step": "ask_user",
+            "ok": false,
+            "error": "malformed_load_id"
+          }
+        ],
+        "clarification_reason": "malformed_load_id",
+        "halted_at": null,
+        "final_answer": "That is not a load identifier I can use. A load identifier has the form FX-YYYY-NNNNNN — four digits for the year and six for the sequence, upper case, for example FX-2026-000042. Could you give me the full identifier?"
+      },
+      "final_answer": "That is not a load identifier I can use. A load identifier has the form FX-YYYY-NNNNNN — four digits for the year and six for the sequence, upper case, for example FX-2026-000042. Could you give me the full identifier?",
+      "source": "(none — no source was consulted)",
+      "example_id": "e5",
+      "title": "a mistyped identifier",
+      "rubric_role": "route D · the clarification workflow — the rule-based router names the typo that Homework #5's model routing could only fall through",
+      "operator_confirmed": false
+    }
+  ]
+}
