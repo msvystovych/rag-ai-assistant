@@ -1,0 +1,154 @@
+# Домашнє завдання №6 — Перша agentic-структура
+
+## 1. Опис завдання
+
+Побудувати простий контрольований agentic workflow для свого chatbot-а.
+Завдання передбачає:
+- вибір domain area і конкретного use case;
+- опис або схему agent workflow;
+- визначення routes, steps, tools і state;
+- реалізацію custom flow у вигляді script або notebook;
+- тестування на 3–5 прикладах.
+
+**Мета** — навчитися описувати і реалізовувати agent workflow:
+`user goal → route/plan → action → observation → state update → next step → final answer`
+
+---
+
+## 2. Вимоги до виконання
+
+### Domain area і use case
+- Обрати конкретний use case для свого chatbot-а (наприклад: HR policy assistant, CRM assistant, document analysis assistant).
+- Сформулювати один конкретний сценарій роботи.
+
+### Схема workflow
+Описати або намалювати схему у вигляді тексту, Markdown або draw.io:
+```
+User question
+→ Router
+→ [route A] Policy workflow → Tool call → Observation → Answer
+→ [route B] Task workflow → Tool call → Observation → Answer
+→ [route C] Clarification → Ask user
+```
+
+### Routes / Steps
+Визначити мінімум **2 routes** або **3 steps**, які система може виконувати.
+
+### Tools
+Визначити мінімум **2 mock tools** з фіксованим результатом.
+Реальні API не обов'язкові — достатньо mock функцій.
+
+### State
+Описати, що система зберігає під час workflow:
+- `user_goal`, `selected_route`, `tool_calls`, `observations`, `final_answer` тощо.
+
+### Custom flow
+Реалізувати deterministic rule-based routing (без LLM у routing — це нормально для цього завдання):
+```python
+if "policy" in question.lower():
+    route = "policy_workflow"
+elif "task" in question.lower():
+    route = "task_workflow"
+else:
+    route = "clarification"
+```
+
+---
+
+## 3. Формат здачі
+
+| Що | Де |
+|---|---|
+| Custom flow script або notebook | `scripts/agent_flow.py` або `notebooks/` |
+| Схема workflow | у README |
+| Список routes, tools, state | у README |
+| Приклади 3–5 питань з трасуванням | `outputs/agent_flow_examples.md` |
+
+`outputs/agent_flow_examples.md` має містити для кожного прикладу:
+```
+Question: ...
+Route: ...
+Tool called: ...
+Observation: ...
+State after step: { ... }
+Final answer: ...
+```
+
+---
+
+## 4. Критерії оцінювання
+
+| Критерій | Бали | Опис |
+|---|---|---|
+| Описано use case і domain | 5 | Є чіткий опис, навіщо потрібен chatbot |
+| Схема workflow присутня | 10 | Видно routes, steps, transitions |
+| Мінімум 2 routes або 3 steps реалізовано | 15 | Routing логіка працює коректно |
+| Мінімум 2 mock tools реалізовано | 10 | Tools повертають результат |
+| State описано та використовується | 5 | Видно, що workflow пам'ятає попередні кроки |
+| 3–5 прикладів із трасуванням | 5 | Видно route → tool → observation → answer |
+| **Разом** | **50** | |
+
+---
+
+## 5. Приклад custom flow
+
+```python
+def run_agent(question: str) -> dict:
+    state = {
+        "user_question": question,
+        "selected_route": None,
+        "tool_result": None,
+        "final_answer": None,
+    }
+
+    # Step 1: Route
+    if any(w in question.lower() for w in ["vacation", "leave", "policy", "remote", "expense"]):
+        state["selected_route"] = "policy_rag"
+    elif any(w in question.lower() for w in ["status", "employee", "emp_"]):
+        state["selected_route"] = "employee_lookup"
+    else:
+        state["selected_route"] = "clarification"
+
+    # Step 2: Execute
+    if state["selected_route"] == "policy_rag":
+        state["tool_result"] = search_policy_documents(question)
+        state["final_answer"] = f"According to the HR policy: {state['tool_result']['content']}"
+
+    elif state["selected_route"] == "employee_lookup":
+        emp_id = extract_employee_id(question)
+        state["tool_result"] = get_employee_status(emp_id)
+        state["final_answer"] = f"Employee status: {state['tool_result']}"
+
+    else:
+        state["final_answer"] = "Could you please clarify your question? Are you asking about a policy or a specific employee?"
+
+    return state
+```
+
+---
+
+## 6. Приклад виведення
+
+```
+Question: Can I carry over unused vacation days?
+Route: policy_rag
+Tool: search_policy_documents
+Observation: "Unused vacation days may be carried over until March 31..."
+State: { selected_route: policy_rag, tool_result: {...}, final_answer: "..." }
+Final answer: According to the Vacation Policy, unused vacation days may be carried over until March 31 of the following year.
+
+---
+
+Question: What is the status of employee emp_002?
+Route: employee_lookup
+Tool: get_employee_status
+Observation: { status: "on_leave", department: "HR" }
+State: { selected_route: employee_lookup, tool_result: {...}, final_answer: "..." }
+Final answer: Employee emp_002 is currently on leave and works in the HR department.
+
+---
+
+Question: Tell me something interesting.
+Route: clarification
+Final answer: Could you please clarify your question? Are you asking about a policy or a specific employee?
+```
