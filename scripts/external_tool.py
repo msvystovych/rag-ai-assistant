@@ -725,9 +725,7 @@ def dispatch(
             arguments=None,
             result=rejection
             if rejection is not None
-            else _reject(
-                call.name, "invalid_arguments", "arguments failed validation."
-            ),
+            else _reject("invalid_arguments", "arguments failed validation."),
         )
     if spec.is_write:
         result = book_load(args["load_id"], args["carrier_id"], data=data)

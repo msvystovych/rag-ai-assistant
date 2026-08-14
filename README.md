@@ -932,12 +932,14 @@ Six runs across five scenarios, all in [`outputs/tool_examples.md`](outputs/tool
 
 ## Conclusions — Homework #5
 
-**The routing is what this homework actually demonstrates, and the model got it right four times
-out of four decisions that mattered.** It reached for a tool on both live-state questions and on
-both booking attempts. It declined on both questions about documented knowledge, with the tools
-sitting on the table each time. Nothing had to inspect the question before the model saw it. The
-two declines are the more interesting half. Scenario s5 is the case that the assignment's own § 2
-asks about ("коли НЕ викликати"). Scenario s3 was a decline nobody designed for.
+**The routing is what this homework actually demonstrates, and across six runs the model decided
+correctly every time.** It reached for a tool on two of the three live-state questions and on both
+booking attempts. It declined twice, with the tools sitting on the table each time. One decline
+was the question about documented knowledge. The other was a malformed identifier. The contract's
+own `pattern` filtered it before validation ran. Nothing had to inspect the question before the
+model saw it. The two declines are the more interesting half. Scenario s5 is the case that the
+assignment's own § 2 asks about ("коли НЕ викликати"). Scenario s3 was a decline nobody
+designed for.
 
 **The tool description turned out to be the load-bearing piece of the design. A wrong description
 made the gate untestable, not merely worse.** The first version told the model that `book_load`
