@@ -1248,9 +1248,11 @@ python -m pytest -q
 
 ## Example trace
 
-The block below is `e3` from [`outputs/agent_flow_examples.md`](outputs/agent_flow_examples.md),
-abridged only by truncating the two long JSON payloads. It is the refused half of the booking pair —
-the run that proves the gate is real.
+The block below is `e3`, the refused half of the booking pair — the run that proves the gate is
+real. Every line is verbatim from the committed run except the four JSON payloads, which keep a
+subset of the keys of the key-sorted original for width: 6 of 17 and 4 of 10 on step 1, 6 of 8 and
+3 of 10 on step 2. The full payloads are in
+[`outputs/agent_flow_examples.md`](outputs/agent_flow_examples.md).
 
 ```bash
 $ python scripts/agent_flow.py --question "Book load FX-2026-000211 for carrier CAR-00817."
@@ -1266,7 +1268,7 @@ Observation: {"booking_reference": null, "carrier": null, "destination": "Milan,
 State after step: {"halted_at": null, "steps_executed": "1 of 3", "tool_calls": ["get_load_status"], "final_answer": null, ...}
 
 Step 2/3 — check_authorisation (gate)
-Input: {"load_id": "FX-2026-000211", "operator_confirmed": false}
+Input: {"carrier_id": "CAR-00817", "load_id": "FX-2026-000211", "operator_confirmed": false}
 Tool called: (none — `check_authorisation` is a gate step, it reads state, not a source)
 Observation: {"carrier_id": "CAR-00817", "error": "confirmation_required", "load_is_open": true, "ok": false, "operator_confirmed": false, "status": "posted", ...}
 State after step: {"halted_at": "check_authorisation", "steps_executed": "2 of 3", "tool_calls": ["get_load_status"], ...}

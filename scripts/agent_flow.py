@@ -267,13 +267,13 @@ class RouteDecision:
     reason: str | None = None
 
 
-def _identifier_problem(
-    question: str, *, load_id: str | None, carrier_id: str | None
-) -> str:
-    """Name the first identifier a booking request failed to supply, or supplied malformed.
+def _identifier_problem(question: str, *, load_id: str | None) -> str:
+    """Name the identifier a booking request failed to supply, or supplied malformed.
 
-    The load id is checked first because it is the one a booking cannot proceed without: naming the
-    carrier problem while the load is also absent would send the user back for one of two answers.
+    Called only when at least one operand is absent, so an unset `load_id` settles it and the
+    carrier branch needs no argument of its own — it re-reads the clause. The load id is checked
+    first because it is the one a booking cannot proceed without: naming the carrier problem while
+    the load is also absent would send the user back for one of two answers.
     """
     if load_id is None:
         return (
@@ -385,7 +385,7 @@ def route(question: str) -> RouteDecision:
             "R3",
             booked_load,
             booked_carrier,
-            _identifier_problem(clause, load_id=booked_load, carrier_id=booked_carrier),
+            _identifier_problem(clause, load_id=booked_load),
         )
     # R4 — a load is named, so answer about that load.
     if load_id is not None:

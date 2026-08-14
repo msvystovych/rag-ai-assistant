@@ -373,7 +373,7 @@ throughout. Each fix is now mutation-tested: reverting any one of them turns the
 
 A fourth, larger fix was **declined**: a `carrier_lookup_unsupported` clarification reason for
 questions naming only a carrier. R9's message already enumerates the three things this workflow can
-do, which answers the question honestly, and a seventh reason for a route that does not exist is
+do, which answers the question honestly, and an eighth reason for a route that does not exist is
 the gold-plating the simplicity gate exists to stop. The residual is in § Known limits.
 
 ## Known limits — stated, not hidden
