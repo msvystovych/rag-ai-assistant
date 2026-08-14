@@ -5,6 +5,46 @@ overlap, merging, section derivation, or metadata appears anywhere else in this 
 copy. Change it here first. One sanctioned copy exists: the *Chunking strategy* section of the
 repo-root `README.md`, because `spec:62` requires the README to describe the strategy.
 
+Assignment spec:
+[`../tasks/Домашнє завдання №1 — Підготовка knowl`](../tasks/Домашнє%20завдання%20№1%20—%20Підготовка%20knowl).
+
+**Want the rules, not the argument?** Start at [§ Chunking strategy](#chunking-strategy), then
+[§ Chunk contract](#chunk-contract). Those two sections carry every binding rule. The
+[§ Settled decisions](#settled-decisions--merge_short-is-one-rule-settled-2026-07-21) section that
+comes first records why three earlier contradictions resolved the way they did. Read it when you
+want the reasoning, or when you plan to change a parameter.
+
+## Contents
+
+- [Settled decisions — `merge_short` is one rule *(settled 2026-07-21)*](#settled-decisions--merge_short-is-one-rule-settled-2026-07-21)
+  - [D1 · Sub-500 residuals — reduced, not eliminated](#d1--sub-500-residuals--reduced-not-eliminated)
+  - [D1b · Merge granularity — settled: **pieces**](#d1b--merge-granularity--settled-pieces)
+  - [D2 · The overlap assertion contradicts the merge rule — settled: carve-out](#d2--the-overlap-assertion-contradicts-the-merge-rule--settled-carve-out)
+  - [D3 · Heading casing *(authoring note — no code impact)*](#d3--heading-casing-authoring-note--no-code-impact)
+- [Chunking strategy](#chunking-strategy)
+  - [Method](#method)
+  - [Section derivation](#section-derivation)
+  - [Parameters](#parameters)
+  - [Overlap scope](#overlap-scope)
+  - [Merge rules](#merge-rules)
+  - [Other edge cases](#other-edge-cases)
+- [Chunk contract](#chunk-contract)
+  - [Why the fields are nested](#why-the-fields-are-nested)
+  - [Shape](#shape)
+  - [Fields](#fields)
+  - [Invariants](#invariants)
+  - [Validating your output](#validating-your-output)
+- [Implementation brief — `scripts/prepare_knowledge_base.py`](#implementation-brief--scriptsprepare_knowledge_basepy)
+  - [Dependencies](#dependencies)
+  - [Data model](#data-model)
+  - [Functions, in pipeline order](#functions-in-pipeline-order)
+  - [CLI](#cli)
+  - [Idempotency](#idempotency)
+  - [Error-handling stance](#error-handling-stance)
+- [Tests — above rubric, and they exist](#tests--above-rubric-and-they-exist)
+- [Known limits — stated, not hidden](#known-limits--stated-not-hidden)
+- [What is deliberately not built](#what-is-deliberately-not-built)
+
 ---
 
 ## Settled decisions — `merge_short` is one rule *(settled 2026-07-21)*
@@ -38,9 +78,15 @@ ordinary case:
 Any section between roughly 800 and 1300 characters produces such a tail — the common case, not the
 exception. The backward path fits it; the forward path never does.
 
-**How many residuals actually remain.** The simulation ran over `corpus-plan.md`'s word budgets for
-the core four: 400 trials, a fixed seed, and sections that a separator-snapping splitter packs. It
-counts bodies.
+**How many residuals actually remain — simulated, not measured.** The simulation ran over
+`corpus-plan.md`'s word budgets for the core four: 400 trials, a fixed seed, and sections that a
+separator-snapping splitter packs. It counts bodies.
+
+> ⚠️ **Read the next table as an estimate.** The corpus did not exist when the simulation ran. The
+> real run measured **16.9%** sub-500 bodies, against the **8.5%** this table predicts. § The
+> measured distribution below carries the real numbers.
+
+**Simulated** sub-500 rates by merge policy:
 
 | Merge policy | sub-500 bodies | median residual | bodies under 250 chars |
 |---|---|---|---|
@@ -53,11 +99,12 @@ The gain that matters is the last column. The rule does not remove short chunks.
 ones. A 413-char chunk ends on a paragraph boundary and carries its breadcrumb. Such a chunk is
 neither truncated nor context-free.
 
-**These figures are simulations, not measurements.** The corpus did not exist when the simulation
-ran, so read the table and the percentages around it as estimates. The measured distribution
-follows.
+The percentages in the paragraph above the table are simulations too. That covers the 25.6% and
+the 14.2%.
 
-**The measured distribution.** The first real run over the finished corpus produced 77 chunks. The
+#### The measured distribution
+
+The first real run over the finished corpus produced 77 chunks. The
 measurement:
 
 - `text` length: minimum 390 · mean 706.9 · maximum 930.
@@ -453,37 +500,37 @@ exactly. Do not wrap it in a dataclass, because the writer serializes it verbati
 
 ### Functions, in pipeline order
 
-**`discover_raw_files(raw_dir: Path) -> list[Path]`**
+#### `discover_raw_files(raw_dir: Path) -> list[Path]`
 Glob `data/raw/*.md` and sort by name for determinism.
 *Errors:* fewer than 3 files → exit non-zero with a clear message (the spec requires ≥3).
 
-**`strip_front_matter(text: str) -> tuple[str, dict]`**
+#### `strip_front_matter(text: str) -> tuple[str, dict]`
 Strip a leading `---` … `---` block and parse its simple `key: value` lines (no external YAML
 parser needed for a flat block).
 *Errors:* missing front-matter, or a `document_type` outside the schema enum → exit non-zero.
 
-**`normalize_text(text: str) -> str`**
+#### `normalize_text(text: str) -> str`
 NFC-normalize · strip HTML comments · collapse 3+ blank lines to 2 · strip trailing spaces ·
 line endings → `\n`.
 
-**`read_markdown(text: str) -> tuple[str, list[tuple[str, str]]]`**
+#### `read_markdown(text: str) -> tuple[str, list[tuple[str, str]]]`
 Split on ATX headers H1–H3 (`^#{1,3}\s`), and skip heading-like lines inside fenced code blocks.
 *Returns* `(title, sections)`. The first H1 is the title. The body before the first H2 becomes a
 section named `"Introduction"`. H2/H3 headings name their own sections.
 
-**`load_document(path: Path) -> Doc`**
+#### `load_document(path: Path) -> Doc`
 Read → `strip_front_matter` → `normalize_text` → `read_markdown` → assemble the `Doc`.
 `document_id = re.sub(r"[^a-z0-9]+", "_", path.stem.lower()).strip("_")`;
 `document_type` comes from the front-matter.
 *Errors:* empty file → diagnostic error, never a silent zero-chunk pass.
 
-**`split_section(body: str, max_chars: int = 800, overlap: int = 150) -> list[str]`**
+#### `split_section(body: str, max_chars: int = 800, overlap: int = 150) -> list[str]`
 Recursive fallback splitter on `["\n\n", "\n", ". ", " "]` — paragraph → line → sentence → word
 boundary, never mid-word. A raw character cut only for a single token longer than `max_chars`.
 Greedy-packs up to `max_chars`, carrying `overlap` tail characters into the next piece. Overlap is
 within-section only.
 
-**`merge_short(pieces: list[Piece], min_chars: int, cap: int, stats: MergeStats | None = None) -> list[Piece]`**
+#### `merge_short(pieces: list[Piece], min_chars: int, cap: int, stats: MergeStats | None = None) -> list[Piece]`
 Single pass over the document's piece stream. Any piece shorter than `min_chars` merges **backward**
 into its predecessor. The merge happens only while the merged piece stays ≤ `cap`. Otherwise the
 pass emits the piece short. There is no forward merge, so the first piece of the stream is never a
@@ -495,7 +542,7 @@ within-section merge the pass strips the later piece's leading overlap carry. It
 that carry actually repeats the predecessor's tail. A cross-section merge has no carry, so the pass
 strips nothing.
 
-**`chunk_document(doc: Doc, cfg: Config, stats: MergeStats | None = None) -> list[dict]`**
+#### `chunk_document(doc: Doc, cfg: Config, stats: MergeStats | None = None) -> list[dict]`
 Header-aware pass, in four steps:
 
 - Split per section. The section name becomes `metadata.section`.
@@ -504,10 +551,10 @@ Header-aware pass, in four steps:
 - Prepend the breadcrumb.
 - Assign a 1-based `chunk_index` and `chunk_id = f"{document_id}_chunk_{i:03d}"`.
 
-**`write_jsonl(chunks: list[dict], out_path: Path) -> None`**
+#### `write_jsonl(chunks: list[dict], out_path: Path) -> None`
 Atomic write — temp file + `os.replace`. One `json.dumps(ensure_ascii=False)` per line.
 
-**`validate(out_path: Path, cfg: Config) -> ValidationReport`**
+#### `validate(out_path: Path, cfg: Config) -> ValidationReport`
 Re-reads the file it just wrote, line by line:
 
 | # | Rule | Severity | Exit | Message |
@@ -521,7 +568,7 @@ Re-reads the file it just wrote, line by line:
 
 Returns stats: document count, chunk count, length min/avg/max, per-document counts, warnings.
 
-**`main(argv: list[str]) -> int`**
+#### `main(argv: list[str]) -> int`
 `argparse` → discover → load → normalize → chunk → write → validate → print summary. Non-zero exit
 on hard validation failure. The run reports soft warnings and exits 0.
 
@@ -553,7 +600,7 @@ A zero-chunk run is never a silent success.
 
 ---
 
-## Optional tests
+## Tests — above rubric, and they exist
 
 **Above rubric — zero points** (`spec:70-78` awards none for tests). Cheap credibility, and a
 genuine safety net when you re-tune `chunk_size` for the retrieval homework.

@@ -1,9 +1,15 @@
-## Analysis — where retrieval works and where it fails
+# Analysis — where retrieval works and where it fails
+
+The Homework #2 companion to [`retrieval-spec.md`](retrieval-spec.md). That file owns the retrieval
+layer's design decisions. This one reports what the layer did over the committed index.
+
+Assignment spec:
+[`../tasks/Домашнє завдання №2 — Базовий semantic retrieval layer`](../tasks/Домашнє%20завдання%20№2%20—%20Базовий%20semantic%20retrieval%20layer).
 
 This analysis ran all ten queries against the committed index. Every number below comes from a
 measurement, not from an estimate.
 
-### Where it works
+## Where it works
 
 **The retrieval layer solves direct queries that reuse the corpus's vocabulary.** All three scored
 0.536–0.685 and returned the correct section. `q03` ("strangler-fig pattern") is the model case:
@@ -21,7 +27,7 @@ top-3 is 2.00 and mean distinct documents is 1.33. The results concentrate where
 rather than scattering across the corpus. Including the out-of-corpus query, those two numbers
 become 2.10 and 1.40.
 
-### Where it fails
+## Where it fails
 
 **Paraphrasing costs 30% of the similarity score.** Mean top-1 falls from 0.601 (direct) to 0.423
 (paraphrase) — a 0.178 drop, 30% relative. The ranking holds, but the margin narrows sharply.
@@ -49,11 +55,11 @@ signal is the score: 0.266 against an in-corpus floor of 0.413. The margin is re
 (0.147), and at Homework #2 the code enforced no threshold anywhere. Feeding this to an LLM
 unfiltered is how a RAG system confidently answers a question it has no source for.
 
-A floor near 0.35 was the obvious next control. **Update 2026-08-13** — Homework #4 built that
+A floor near 0.35 was the obvious next control. **Since then:** Homework #4 (2026-08-12) built that
 floor at exactly 0.35. `scripts/rag_answer.py` defines `DEFAULT_MIN_SCORE = 0.35`, and its
 `generate()` function enforces that floor against the top semantic score.
 
-### Chunk-size experiment — 800/150 stays
+## Chunk-size experiment — 800/150 stays
 
 Re-chunking at 500/100 produces 116 chunks instead of 77. It also slightly *raises* mean top-1
 (0.546 vs 0.534). Smaller chunks are more topically concentrated, so the best match matches harder.
@@ -69,7 +75,7 @@ Smaller chunks buy sharper peaks and pay in discrimination. More chunks means mo
 short passage to spuriously resemble an unrelated query. This closes `reflection.md` risk #7 with
 a measurement rather than a guess. The pipeline keeps 800/150.
 
-### Honest limitations
+## Known limits — stated, not hidden
 
 1. **The corpus and the queries share an author.**
    `reflection.md` risk #5 named this before any code existed, and it is still the biggest caveat

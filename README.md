@@ -997,7 +997,8 @@ problem.
 └── docs/homework1|homework2|homework3|homework4|homework5|tasks
 ```
 
-Design notes and the full pipeline specification live in
+Design notes and the full pipeline specification live in [`docs/`](docs/README.md) — start there.
+The per-homework detail is in
 [`docs/homework1/`](docs/homework1/README.md) and [`docs/homework2/`](docs/homework2/analysis.md).
 The per-homework design decisions continue in
 [`docs/homework3/retrieval-improvements-spec.md`](docs/homework3/retrieval-improvements-spec.md),

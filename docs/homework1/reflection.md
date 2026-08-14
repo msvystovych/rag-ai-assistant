@@ -2,6 +2,9 @@
 
 Seeds the submission README's **Conclusions** section, worth 5 points (`spec:77`).
 
+Assignment spec:
+[`../tasks/Домашнє завдання №1 — Підготовка knowl`](../tasks/Домашнє%20завдання%20№1%20—%20Підготовка%20knowl).
+
 > ✅ **Filled from the first real run** (4 documents, 77 chunks). The condensed version of these
 > rows is in the repo-root `README.md` § Conclusions — Homework #1 chunk quality.
 

@@ -9,26 +9,143 @@ retrieved chunks." — this homework consumes that deferral.
 Assignment spec:
 [`../tasks/Домашнє завдання №4 — Генерація відповіді поверх retrieval`](../tasks/Домашнє%20завдання%20№4%20—%20Генерація%20відповіді%20поверх%20retrieval).
 
+## Contents
+
+- [Decisions](#decisions)
+  - [1. Three prompt versions ship as runnable constants](#1-three-prompt-versions-ship-as-runnable-constants)
+  - [2. v1 is the assignment's own § 7 "original prompt", kept verbatim](#2-v1-is-the-assignments-own--7-original-prompt-kept-verbatim)
+  - [3. The answer model is `gpt-4.1-mini`, reached through `Settings.answer_model`](#3-the-answer-model-is-gpt-41-mini-reached-through-settingsanswer_model)
+  - [4. A module constant holds temperature at 0, and no CLI flag exposes it](#4-a-module-constant-holds-temperature-at-0-and-no-cli-flag-exposes-it)
+  - [5. Two independent fallback gates guard the answer](#5-two-independent-fallback-gates-guard-the-answer)
+  - [6. The floor is `0.35`, over the best non-`None` `semantic_score` in the retrieved set](#6-the-floor-is-035-over-the-best-non-none-semantic_score-in-the-retrieved-set)
+  - [7. Below the floor the script passes an empty context and still calls the model](#7-below-the-floor-the-script-passes-an-empty-context-and-still-calls-the-model)
+  - [8. Citations are inline `[chunk_id]` markers and a `Source:` line](#8-citations-are-inline-chunk_id-markers-and-a-source-line)
+  - [9. The parser reads citations back out of the model's own answer](#9-the-parser-reads-citations-back-out-of-the-models-own-answer)
+  - [10. Generation feeds off the Homework #3 combined pipeline](#10-generation-feeds-off-the-homework-3-combined-pipeline)
+  - [11. Each improvement case retrieves once, then runs both prompt versions over identical chunks](#11-each-improvement-case-retrieves-once-then-runs-both-prompt-versions-over-identical-chunks)
+  - [12. A human authors the HW4 commentary after a real run](#12-a-human-authors-the-hw4-commentary-after-a-real-run)
+  - [13. HW4 extends `data/eval/test_queries.json` additively, with new `hw4_*` keys only](#13-hw4-extends-dataevaltest_queriesjson-additively-with-new-hw4_-keys-only)
+  - [14. The output guard refuses to write over any committed HW2 or HW3 artifact](#14-the-output-guard-refuses-to-write-over-any-committed-hw2-or-hw3-artifact)
+- [Known limits — stated, not hidden](#known-limits--stated-not-hidden)
+  - [The relevance floor](#the-relevance-floor)
+  - [Citations](#citations)
+  - [Refusal detection](#refusal-detection)
+  - [The limits of the grounding claim](#the-limits-of-the-grounding-claim)
+  - [The weak-context run, and the defect it exposed](#the-weak-context-run-and-the-defect-it-exposed)
+- [What is deliberately not built](#what-is-deliberately-not-built)
+
 ## Decisions
 
-| # | Decision | Rationale |
-|---|---|---|
-| 1 | **Three prompt versions ship as runnable constants** (`PROMPT_VERSIONS`, `--prompt-version v1\|v2\|v3`), not as quoted prose in a document | The rubric asks for before/after evidence. A "before" that lives only as a string inside a Markdown file cannot be re-run. Its recorded output is an assertion, not a measurement. Keeping every version executable makes each improvement reproducible by one command. It also lets offline tests pin the clauses each version must contain. An edit that silently drops the refusal rule or the citation requirement then fails the suite instead of quietly degrading the grade. |
-| 2 | **v1 is the assignment's own § 7 "original prompt", kept verbatim** — no role, no grounding rule, no refusal rule, no citation requirement | The baseline has to be the naive prompt the assignment itself names. Any other baseline measures the improvements against a strawman of our own construction. Version v1 deliberately has no system message at all. |
-| 3 | **Answer model `gpt-4.1-mini`, reached through `Settings.answer_model`** (`RAG_ANSWER_MODEL` env override, `--answer-model` flag) | The project's one-env-read-point rule forces every environment variable through `Settings.from_env`. A chat model read locally in the new script would be the first exception. Routing through `Settings` also means an account without access to this model needs a flag, not a code change. The `OpenAIError` boundary names that flag in its diagnostic. |
-| 4 | **A module constant holds temperature at 0, and no CLI flag exposes it** | The committed answers are graded artifacts. Sampled decoding would make "re-run it and you get this file" a hope rather than an instruction. It would also make a prompt-improvement comparison unfalsifiable. A difference between v1 and v3 could always be resampling noise. Configurability here would buy nothing the homework asks for, and would cost the reproducibility claim. |
-| 5 | **Two independent fallback gates: a retrieval-side relevance floor AND the prompt's own refusal rule** | Either alone leaves a hole. A score floor cannot tell that three on-topic chunks all miss the specific fact asked for. It only sees distance. A prompt rule alone never sees an empty context, so the "порожній context" half of the rubric row is untestable. Together the floor answers "is anything here close enough to be worth showing?" and the prompt answers "does what I was shown actually contain the answer?" |
-| 6 | **Floor = `0.35`, applied to the best non-`None` `semantic_score` in the retrieved set** | Not a fresh guess. Homework #2's evaluation measured the out-of-corpus query's top score at **0.266** and the lowest in-corpus top-1 at **0.413**. Its analysis concluded "A score floor near 0.35 would be needed before this feeds an LLM." Homework #3 re-measured the same separation and deferred again. 0.35 sits in the measured gap, and this repo's own data produced the number. |
-| 7 | **Below the floor the script passes an **empty** context and still calls the model** — the run never short-circuits to a canned string | If the script returned the refusal itself, the refusal would be the script's behaviour. The rubric's "**Модель** не вигадує відповідь" would then be untestable, because the script never asked the model. Calling the model with an empty context is what turns the fallback into an observation about the model. |
-| 8 | **Citations are inline `[chunk_id]` markers **and** a `Source:` line carrying `source_file`** | The spec asks for "chunk_id **or** source_file". Inline ids attribute each claim to the chunk it came from. A file path cannot do that at chunk granularity. The file path is what a reader actually opens. They answer different questions, and both are cheap. |
-| 9 | **The parser reads citations back out of the model's own answer** and splits them into real vs fabricated against the ids actually supplied | The alternative — appending the retrieved ids to the answer — would make "every answer carries a citation" true by construction and worth nothing. Matching the model's markers against the supplied set measures model behaviour. The parser counts an id that was never in the context as a hallucination, not a citation. Below the floor no chunk reaches the model, so any id in a refusal below the floor is a fabrication by definition. |
-| 10 | **Generation feeds off the Homework #3 combined pipeline, with no retrieval knobs re-exposed at all** | HW3 measured the combined configuration best (top-3 expected-document precision 0.963 vs the baseline's 0.889). A grounded answer should therefore build on that configuration. `--document-type`, `--no-filter` and `--no-hybrid` already exist on `retrieval_improved.py`, which owns them. This homework built a `--baseline` toggle that answered over the HW2 semantic-only layer, and then **deleted it before delivery**. Review found no rubric row, no deliverable and no evaluation that consumed it. Homework #3 already owned the retrieval-comparison axis as a graded deliverable, and shipped it as `outputs/retrieval_comparison.md`. Keeping the toggle would break the "a homework's scope ends where its spec ends" rule, in the direction that is easiest to excuse. |
-| 11 | **Each improvement case retrieves once and runs both prompt versions over the identical chunks** | Re-retrieving between the "before" and the "after" would confound the prompt change with a re-embedded query. This is why `retrieve()` and `generate()` are separate functions rather than one pipeline call. |
-| 12 | **A human authors `hw4_comment`, `hw4_conclusion` and `hw4_prompt_improvements` after a real run** | The same two-pass discipline as HW2's relevance comments and HW3's `hw3_comment`. Both `--evaluate` and `--improvements` name the entries that are still empty on stderr. Neither renders a placeholder. |
-| 13 | **HW4 extends `data/eval/test_queries.json` additively — new `hw4_*` keys only** | The same ten questions carried Homework #2 and Homework #3. Reusing them makes the three homeworks one continuous evaluation. A reader can then watch a single query travel from "which chunks came back" to "what the model said about them". The existing `comment`, `hw3_comment`, `expected_documents`, `category` and `query` values remain graded artifacts from earlier homeworks. No homework touches them. The file's own `description` field documents this per-homework additive convention, and HW4 is its third iteration. |
-| 14 | **The output guard refuses to write over any committed HW2/HW3 artifact** | Same family as HW3's baseline guard. `outputs/retrieval_examples.md` and its siblings are graded artifacts. A mistyped `--output` should stop the run, not destroy a delivered homework. |
+### 1. Three prompt versions ship as runnable constants
+
+They live in `PROMPT_VERSIONS`, behind `--prompt-version v1|v2|v3`. They do not sit in a document as quoted
+prose. The rubric asks for before/after evidence. A "before" that lives only as a string inside
+a Markdown file cannot be re-run. Its recorded output is an assertion, not a measurement. Keeping
+every version executable makes each improvement reproducible by one command. It also lets offline
+tests pin the clauses each version must contain. An edit that silently drops the refusal rule or
+the citation requirement then fails the suite, instead of quietly degrading the grade.
+
+### 2. v1 is the assignment's own § 7 "original prompt", kept verbatim
+
+It carries no role, no grounding rule, no refusal rule and no citation requirement. The baseline
+has to be the naive prompt the assignment itself names. Any other baseline measures the
+improvements against a strawman of our own construction. Version v1 deliberately has no system
+message at all.
+
+### 3. The answer model is `gpt-4.1-mini`, reached through `Settings.answer_model`
+
+The overrides are the `RAG_ANSWER_MODEL` environment variable and the `--answer-model` flag. The
+project's one-env-read-point rule forces every environment variable through `Settings.from_env`. A
+chat model read locally in the new script would be the first exception. Routing through `Settings`
+also means an account without access to this model needs a flag, not a code change. The
+`OpenAIError` boundary names that flag in its diagnostic.
+
+### 4. A module constant holds temperature at 0, and no CLI flag exposes it
+
+The rubric grades the committed answers. Sampled decoding would make "re-run it and you get
+this file" a hope rather than an instruction. It would also make a prompt-improvement comparison
+unfalsifiable. A difference between v1 and v3 could always be resampling noise. Configurability
+here would buy nothing the homework asks for, and would cost the reproducibility claim.
+
+### 5. Two independent fallback gates guard the answer
+
+They are a retrieval-side relevance floor and the prompt's own refusal rule. Either alone leaves a
+hole. A score floor cannot tell that three on-topic chunks all miss the specific fact asked for. It
+only sees distance. A prompt rule alone never sees an empty context, so the "порожній context" half
+of the rubric row is untestable. Together the floor answers "is anything here close enough to be
+worth showing?" and the prompt answers "does what I was shown actually contain the answer?"
+
+### 6. The floor is `0.35`, over the best non-`None` `semantic_score` in the retrieved set
+
+This is not a fresh guess. Homework #2's evaluation measured the out-of-corpus query's top score at
+**0.266**, and the lowest in-corpus top-1 at **0.413**. Its analysis concluded "A score floor near
+0.35 would be needed before this feeds an LLM." Homework #3 re-measured the same separation and
+deferred again. 0.35 sits in the measured gap, and this repo's own data produced the number.
+
+### 7. Below the floor the script passes an empty context and still calls the model
+
+The run never short-circuits to a canned string. If the script returned the refusal itself, the
+refusal would be the script's behaviour. The rubric's "**Модель** не вигадує відповідь" would then
+be untestable, because the script never asked the model. Calling the model with an empty context is
+what turns the fallback into an observation about the model.
+
+### 8. Citations are inline `[chunk_id]` markers and a `Source:` line
+
+The `Source:` line carries `source_file`. The spec asks for "chunk_id **or** source_file". Inline
+ids attribute each claim to the chunk it came from. A file path cannot do that at chunk
+granularity. The file path is what a reader actually opens. They answer different questions, and
+both are cheap.
+
+### 9. The parser reads citations back out of the model's own answer
+
+It splits them into real and fabricated against the ids actually supplied. The alternative —
+appending the retrieved ids to the answer — would make "every answer carries a citation" true by
+construction and worth nothing. Matching the model's markers against the supplied set measures
+model behaviour. The parser counts an id that was never in the context as a hallucination, not a
+citation. Below the floor no chunk reaches the model. So any id in a refusal below the floor is a
+fabrication by definition.
+
+### 10. Generation feeds off the Homework #3 combined pipeline
+
+This layer re-exposes no retrieval knob. HW3 measured the combined configuration best: top-3
+expected-document precision 0.963, against the baseline's 0.889. A grounded answer should therefore
+build on that configuration. `--document-type`, `--no-filter` and `--no-hybrid` already exist on
+`retrieval_improved.py`, which owns them. This homework built a `--baseline` toggle that answered
+over the HW2 semantic-only layer, and then **deleted it before delivery**. Review found no rubric
+row, no deliverable and no evaluation that consumed it. Homework #3 already owned the
+retrieval-comparison axis as a graded deliverable, and shipped it as
+`outputs/retrieval_comparison.md`. Keeping the toggle would break the "a homework's scope ends
+where its spec ends" rule, in the direction that is easiest to excuse.
+
+### 11. Each improvement case retrieves once, then runs both prompt versions over identical chunks
+
+Re-retrieving between the "before" and the "after" would confound the prompt change with a
+re-embedded query. This is why `retrieve()` and `generate()` are separate functions, rather than
+one pipeline call.
+
+### 12. A human authors the HW4 commentary after a real run
+
+The keys are `hw4_comment`, `hw4_conclusion` and `hw4_prompt_improvements`. This is the same
+two-pass discipline as HW2's relevance comments and HW3's `hw3_comment`. Both `--evaluate` and
+`--improvements` name the entries that are still empty on stderr. Neither renders a placeholder.
+
+### 13. HW4 extends `data/eval/test_queries.json` additively, with new `hw4_*` keys only
+
+The same ten questions carried Homework #2 and Homework #3. Reusing them makes the three homeworks
+one continuous evaluation. A reader can then watch a single query travel from "which chunks came
+back" to "what the model said about them". The existing `comment`, `hw3_comment`,
+`expected_documents`, `category` and `query` values remain graded artifacts from earlier homeworks.
+No homework touches them. The file's own `description` field documents this per-homework additive
+convention, and HW4 is its third iteration.
+
+### 14. The output guard refuses to write over any committed HW2 or HW3 artifact
+
+This is the same family as HW3's baseline guard. The rubric grades `outputs/retrieval_examples.md` and its
+siblings. A mistyped `--output` should stop the run, not destroy a delivered homework.
 
 ## Known limits — stated, not hidden
+
+### The relevance floor
 
 - **The floor takes its calibration from one statistic and its input from another.** 0.35 came from
   Homework #2's **semantic top-1** distribution. The gate instead reads the best cosine score among
@@ -60,6 +177,9 @@ Assignment spec:
   discards a strong lexical match with a weak embedding match. RRF scores are rank-based, so a
   cosine threshold cannot judge them. There is therefore no sound way to fold the two into one
   number.
+
+### Citations
+
 - **The citation parser recognises a bounded set of shapes.** It reads bracketed spans. It accepts
   any token inside one that matches the `chunk_id` schema. `[a_chunk_001]`,
   `[a_chunk_001, b_chunk_002]` and `` [`a_chunk_001`] `` all count. The parser would count zero
@@ -70,17 +190,26 @@ Assignment spec:
   the model named a chunk from its own context. It does not prove that the chunk actually supports
   the sentence that carries the marker. Verification would need either a human pass or an LLM
   judge. An LLM judge that scores its own family's output is weak evidence.
+
+### Refusal detection
+
 - **Refusal detection is substring matching** on "do not have enough information". A match on the
   full sentence would score punctuation compliance. It would also call a correctly-worded refusal a
   hallucination over a trailing period. A match on a distinctive fragment is the looser, more
   honest test. The detector would miscount a model that refuses in wholly different words as an
   answer.
+
+### The limits of the grounding claim
+
 - **Grounding is not accuracy.** Every rule here constrains where the model may take facts from.
   No rule stops the model from misreading a chunk that retrieval supplied correctly. The breadcrumb
   prefix HW3 flagged (`Title > Section.` repeated on every chunk) still gives the model title
   vocabulary it may over-weight.
 - **Single-turn only.** Each question is independent. A follow-up re-retrieves from scratch, with
   no memory of what the earlier turn already showed.
+
+### The weak-context run, and the defect it exposed
+
 - **The weak-context half of the fallback is measured, but only outside the committed run.** The
   rubric row covers an *empty or weak* context. Within `--evaluate` only the empty half occurs,
   because the floor runs first. Every question that reached the model had a context it was willing

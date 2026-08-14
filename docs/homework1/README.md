@@ -23,6 +23,17 @@ freight-exchange domain primer, CQRS and event sourcing, the monolith-to-microse
 and scaling and zero-downtime operations. Kafka telemetry and payments automation are two of the
 three dropped documents, so the corpus covers neither.
 
+## Contents
+
+- [Status](#status)
+- [Start here](#start-here)
+- [Files](#files)
+- [Target repository layout](#target-repository-layout)
+- [Decisions](#decisions)
+- [The work, in the order it ran](#the-work-in-the-order-it-ran)
+- [The one way to lose 10 points after doing all the work](#the-one-way-to-lose-10-points-after-doing-all-the-work)
+- [Pre-submission gate](#pre-submission-gate)
+
 ## Status
 
 **Homework #1 is complete.** Every rubric row (`spec:70-78`) grades a physical artifact, and every
@@ -148,7 +159,7 @@ example chunks and the real run statistics.
 ## Pre-submission gate
 
 Most rows carry their evidence beside them. The audit read the working tree, not the committed tree,
-and that working tree holds uncommitted changes. Three boxes stay open because nothing in the
+and that working tree holds uncommitted changes. Four boxes stay open because nothing in the
 repository records the work, and each one names what would tick it. The two grep sweeps leave no
 artifact in the tree, so run them by hand before any later submission.
 

@@ -2,12 +2,40 @@
 
 Date: 2026-08-13. Base commit: `479bdec`. Test suite: 326 tests, all green.
 
+> **Read this as a dated snapshot, not as a live document.** Every finding below describes the
+> repository at base commit `479bdec`. The report keeps the present tense throughout, because it
+> records what an audit saw on one day. A later commit can close any item here without a note in
+> this file. Check the current file before you act on a finding. The § Stale statements table is
+> the clearest case: later work fixed most of its rows.
+
 This report answers two questions:
 
 1. Does the code implement every requirement of the five specs in `docs/tasks/`?
 2. Do the documents in `docs/` share one structure, and do they follow ASD-STE100?
 
 The specs in `docs/tasks/` are the arbiter. This report never overrides them.
+
+## Contents
+
+- [Method](#method)
+- [Result](#result)
+- [Open items](#open-items)
+  - [1. 62% of chunks open in mid-sentence (HW1 § 2, rubric row 2)](#1-62-of-chunks-open-in-mid-sentence-hw1--2-rubric-row-2)
+  - [2. README example chunks dropped a mandatory field (HW1 § 4, rubric row 5) — FIXED](#2-readme-example-chunks-dropped-a-mandatory-field-hw1--4-rubric-row-5--fixed)
+  - [3. `outputs/prompt_improvements.md` hid the system prompt (HW4 § 4, rubric row 5) — FIXED](#3-outputsprompt_improvementsmd-hid-the-system-prompt-hw4--4-rubric-row-5--fixed)
+  - [4. Two of five HW5 scenarios substitute the tool fields (HW5 § 3) — dispute rejected](#4-two-of-five-hw5-scenarios-substitute-the-tool-fields-hw5--3--dispute-rejected)
+- [Defects in the graded documents](#defects-in-the-graded-documents)
+- [Stale statements in `docs/`](#stale-statements-in-docs)
+- [Pre-existing defects, reported and not fixed](#pre-existing-defects-reported-and-not-fixed)
+- [Document structure](#document-structure)
+- [Simplified Technical English](#simplified-technical-english)
+- [Requirement matrix](#requirement-matrix)
+  - [Homework #1 — knowledge base preparation](#homework-1--knowledge-base-preparation)
+  - [Homework #2 — basic semantic retrieval layer](#homework-2--basic-semantic-retrieval-layer)
+  - [Homework #3 — improved retrieval pipeline](#homework-3--improved-retrieval-pipeline)
+  - [Homework #4 — grounded answer generation](#homework-4--grounded-answer-generation)
+  - [Homework #5 — external tool integration](#homework-5--external-tool-integration)
+- [How to reproduce this report](#how-to-reproduce-this-report)
 
 ## Method
 
@@ -105,8 +133,8 @@ two of the three `Input:` cases, and omits the knowledge-base route.
 ## Defects in the graded documents
 
 The README claim audit checked 29 measurable claims. 21 are accurate.
-The headline numbers all reproduce. They cover the 324-test count and its
-74/52/77/121 split, the 77-chunk corpus, and the chunk-length statistics.
+The headline numbers all reproduce. They cover the 326-test count and its
+74/52/79/121 split, the 77-chunk corpus, and the chunk-length statistics.
 They also cover the HW3 precision progression and every HW4 and HW5 aggregate.
 All 55 relative links resolve.
 Every offline command in the four grading checklists runs and passes.
@@ -137,20 +165,25 @@ owning script. The two-pass discipline in `CLAUDE.md` § Pitfalls covers that st
 The design documents drifted behind the code. No stale statement sits on the graded surface.
 `docs/homework1/README.md:3-4` states that the graded artifact is the root README.
 
-| Location | Statement | Current state |
-|---|---|---|
-| `docs/homework1/README.md:17` | "Nothing is built yet … this scores 0 / 50" | HW1 is complete. 4 documents, 77 chunks, 40 tests |
-| `docs/homework1/README.md:20-27` | six rubric rows marked undelivered | All six are delivered |
-| `docs/homework1/README.md:22` | "7 documents outlined" | 4 documents were authored |
-| `docs/homework1/README.md:107-147` | ranked work list, plus 14 unticked boxes | The work is done |
-| `docs/homework1/corpus-plan.md:102-108` | seven documents marked not written | The repo holds four. The plan dropped three |
-| `docs/homework1/pipeline-spec.md:343` | the script is "Not written yet" | It is 590 lines, and 40 tests cover it |
-| `docs/homework1/pipeline-spec.md:489` | "Optional tests" | `tests/test_prepare_knowledge_base.py` exists |
-| `docs/homework2/analysis.md:46` | "no threshold is enforced anywhere" | HW4 enforces 0.35 at `scripts/rag_answer.py:431` |
-| `docs/homework2/retrieval-spec.md:52-57` | no threshold, no hybrid BM25, no generation | HW3 and HW4 built all three |
-| `docs/homework3/…-spec.md:49` | "No score threshold" | HW4 built it |
-| `docs/homework4/generation-spec.md:121` | "Thirteen questions per run" | `--evaluate` runs 10, and `--improvements` runs 6 |
-| `docs/homework5/…-spec.md:121` | "Six calls per `--examples` run" | The committed run records four tool calls |
+**Every row below is itself out of date.** A later pass repaired the corpus. The Status column
+records what a `grep` finds today. The Location and Statement cells stay verbatim, because the
+record of what drifted is worth more than a tidy table. Line numbers refer to the base commit and
+have moved since.
+
+| Location | Statement | Current state at base commit | Status today |
+|---|---|---|---|
+| `docs/homework1/README.md:17` | "Nothing is built yet … this scores 0 / 50" | HW1 is complete. 4 documents, 77 chunks, 40 tests | **Fixed** — neither phrase remains anywhere |
+| `docs/homework1/README.md:20-27` | six rubric rows marked undelivered | All six are delivered | **Fixed** — the table now carries Designed and Delivered columns |
+| `docs/homework1/README.md:22` | "7 documents outlined" | 4 documents were authored | **Not a defect.** The phrase survives, correctly: it is the *Designed* cell, beside a *Delivered* cell reading "4 documents" |
+| `docs/homework1/README.md:107-147` | ranked work list, plus 14 unticked boxes | The work is done | **Fixed** — the work table records outcomes; 10 of 14 boxes are ticked |
+| `docs/homework1/corpus-plan.md:102-108` | seven documents marked not written | The repo holds four. The plan dropped three | **Fixed** — the Status table marks 4 written and 3 dropped |
+| `docs/homework1/pipeline-spec.md:343` | the script is "Not written yet" | It is 590 lines, and 40 tests cover it | **Fixed** — the phrase remains nowhere |
+| `docs/homework1/pipeline-spec.md:489` | "Optional tests" | `tests/test_prepare_knowledge_base.py` exists | **Fixed** — the heading now reads "Tests — above rubric, and they exist" |
+| `docs/homework2/analysis.md:46` | "no threshold is enforced anywhere" | HW4 enforces 0.35 at `scripts/rag_answer.py:431` | **Fixed** — the sentence is now past-tense and scoped to HW2, with a dated update below it |
+| `docs/homework2/retrieval-spec.md:52-57` | no threshold, no hybrid BM25, no generation | HW3 and HW4 built all three | **Fixed** — all three bullets carry a dated `**Since then:**` pointer |
+| `docs/homework3/…-spec.md:49` | "No score threshold" | HW4 built it | **Fixed** — the bullet names the 2026-08-12 date and both line numbers |
+| `docs/homework4/generation-spec.md:121` | "Thirteen questions per run" | `--evaluate` runs 10, and `--improvements` runs 6 | **Fixed** — the phrase remains nowhere |
+| `docs/homework5/…-spec.md:121` | "Six calls per `--examples` run" | The committed run records four tool calls | **Fixed** — the phrase remains nowhere |
 
 The HW2 and HW3 entries need care. Each one sits under a heading that scopes it
 to its own homework, and a later homework claimed the deferral on purpose.
@@ -177,19 +210,16 @@ A measurement backs each one. None of them rests on a suspicion.
 
 ## Document structure
 
-Homework #3, #4 and #5 already share one template:
+Homework #3, #4 and #5 already share one template. [`../README.md`](README.md) § Conventions now
+owns that shape, and it states the four parts. This section records only which folders departed
+from it at the base commit.
 
-1. A title, a scope paragraph, and a link to the assignment spec.
-2. `## Decisions` — a numbered table of decision and rationale.
-3. `## Known limits — stated, not hidden`
-4. `## What is deliberately not built`
+Two folders carry a partial deviation:
 
-Two folders deviate:
-
-| Folder | Main design document | Deviation |
-|---|---|---|
-| `docs/homework1/` | `pipeline-spec.md` | Five sections, none of which matches the template |
-| `docs/homework2/` | `retrieval-spec.md` | No `## Known limits` section. Three narrative sections sit at H2 |
+| Folder | Main design document | Deviation | Status now |
+|---|---|---|---|
+| `docs/homework1/` | `pipeline-spec.md` | The audit read this as "five sections, none of which matches the template" | **Overstated.** The file carries `## Known limits — stated, not hidden` and `## What is deliberately not built` verbatim. Its own four other H2 sections replace `## Decisions` |
+| `docs/homework2/` | `retrieval-spec.md` | The audit read this as "no `## Known limits` section" | **Wrong at the base commit too.** The heading sits at `retrieval-spec.md:55`. The three narrative H2 sections are real |
 
 `docs/homework1/` also holds three further documents, and `docs/homework2/` holds one.
 Those documents support the design, and the template does not govern them.
@@ -392,11 +422,10 @@ Spec: [`docs/tasks/Домашнє завдання №5 — Інтеграція
 Run each command from the repository root:
 
 ```bash
-.venv/bin/python -m pytest -q                      # 324 tests, offline
+.venv/bin/python -m pytest -q                      # 326 tests, offline
 bash ~/.claude/scripts/check-ste.sh --self-test    # trust the gate first
 bash ~/.claude/scripts/check-ste.sh --gate README.md CLAUDE.md docs/**/*.md
 ```
 
 The README grading checklists hold the per-homework verification commands.
 Each checklist command runs offline, except the ones that the README marks.
-
