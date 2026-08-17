@@ -1,0 +1,148 @@
+# Курсовий проєкт — Фінальне технічне доопрацювання chatbot-а
+
+## 1. Опис завдання
+
+Фінальне технічне доопрацювання chatbot-а перед захистом.  
+Завдання передбачає:
+- знайти одну реальну слабку точку системи;
+- реалізувати одне осмислене технічне покращення;
+- задокументувати before/after поведінку;
+- підготувати changelog і пояснення результату.
+
+**Мета** — не додати максимум функцій, а знайти реальну проблему і вирішити її правильно.  
+Оцінюється осмисленість покращення, а не його масштаб.
+
+---
+
+## 2. Варіанти покращення (один на вибір)
+
+| Варіант | Опис |
+|---|---|
+| Fallback behavior | Chatbot чесно каже "не знаю" замість того, щоб вигадувати |
+| Retry для read операцій | Повторна спроба при помилці retrieval або tool (max 1–2 retries) |
+| Simple guardrail | Перевірка перед відповіддю або tool call (порожній context, неправильні аргументи) |
+| State handling | Збереження активного документа, route або теми між репліками |
+| Кращий routing | Чіткий розподіл між RAG / tool / document / clarification routes |
+| Better prompt | Grounded answering, обов'язкова citation, structured answer |
+| Metadata filtering | Фільтрація retrieval за document_type, domain або іншим полем |
+| Improved tool call | Validation аргументів, error handling, logging tool call |
+
+---
+
+## 3. Вимоги до виконання
+
+### Технічне покращення
+- Реалізувати одне покращення з таблиці вище (або власне обґрунтоване).
+- Покращення має реально змінювати поведінку системи — не лише назви або коментарі.
+
+### Before / After
+Показати 1–3 приклади:
+```
+Before:
+  Question: ...
+  System behavior: (проблема)
+
+After:
+  Question: ...
+  System behavior: (покращена поведінка)
+```
+
+### Changelog
+Написати короткий changelog у форматі:
+```markdown
+## What was improved
+...
+## Why this was needed
+...
+## What changed technically
+- ...
+- ...
+## Result
+...
+```
+
+### Remaining limitations
+Чесно описати, що ще не вирішено.
+
+---
+
+## 4. Формат здачі
+
+| Що | Де |
+|---|---|
+| Оновлена версія проєкту | репозиторій із змінами |
+| Changelog | `FINAL_IMPROVEMENT.md` |
+| Before/after приклади | у `FINAL_IMPROVEMENT.md` або README |
+| Список remaining limitations | у `FINAL_IMPROVEMENT.md` |
+
+---
+
+## 5. Критерії оцінювання
+
+| Критерій | Бали | Опис |
+|---|---|---|
+| Реальна слабка точка знайдена і описана | 15 | Не косметична зміна, а справжня проблема |
+| Технічне покращення реалізовано | 20 | Код змінено, поведінка справді інша |
+| Before / after приклади з 1–3 кейсами | 10 | Видно різницю у поведінці |
+| Changelog написано | 5 | Є what/why/how/result |
+| Remaining limitations чесно описані | 5 | Не "все ідеально" — є реальні обмеження |
+| Загальна технічна зрілість рішення | 5 | Production-minded thinking |
+| **Разом** | **60** | |
+
+---
+
+## 6. Приклад FINAL_IMPROVEMENT.md
+
+```markdown
+# Final Technical Improvement
+
+## 1. Selected weak point
+The chatbot sometimes answered questions even when the retrieved context 
+was empty or had very low relevance scores. Instead of saying 
+"I don't have enough information", it generated a plausible-sounding 
+but ungrounded answer.
+
+## 2. Improvement implemented
+Added a retrieval score threshold and fallback behavior:
+- If max retrieval score < 0.65 → return fallback message
+- If retrieved_chunks is empty → return fallback message
+- Updated prompt to reinforce: do not answer without context
+
+## 3. Why this improvement matters
+Hallucinated answers on HR policy questions are particularly harmful — 
+employees may act on wrong information about vacation rules, 
+expense limits, or performance review dates. Honest fallback is safer 
+than a confident wrong answer.
+
+## 4. Before / after behavior
+
+### Before
+Question: When does my performance improvement plan end?
+Answer: Performance improvement plans typically last 90 days. (hallucinated — not in KB)
+
+### After
+Question: When does my performance improvement plan end?
+Answer: I do not have enough information in the available HR documents 
+to answer this question. Please contact your HR manager directly.
+
+### Before
+Question: Can I work from a different country?
+Answer: Yes, remote work from abroad is generally permitted with manager approval. (hallucinated)
+
+### After
+Question: Can I work from a different country?
+Answer: I do not have enough information in the available HR documents 
+to answer this question. The remote work policy covers domestic remote work 
+but does not address working from abroad. Please check with HR.
+
+## 5. How it was tested
+Tested on 5 out-of-scope questions from the eval set (HW8).
+Before: 3/5 returned hallucinated answers.
+After: 0/5 hallucinated — all returned fallback or partial answer with honest caveat.
+
+## 6. Remaining limitations
+- Threshold (0.65) was chosen empirically — needs proper calibration on larger eval set
+- Fallback message is generic — could be improved to suggest where to find the answer
+- System still cannot handle multi-document reasoning questions well
+- No retry logic if retrieval fails completely (network/index issue)
+```
